@@ -1,0 +1,58 @@
+[project]
+name = "pipeline-doctor"
+version = "0.0.0"
+description = "Workspace root for Pipeline Doctor."
+requires-python = ">=3.13"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "mypy==2.4.1",
+  "pytest==9.2.0",
+  "pytest-asyncio==1.5.0",
+  "ruff==0.17.5",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = [
+  "agent",
+  "mcp-servers/github",
+  "mcp-servers/jira",
+  "rag",
+  "sandbox",
+  "evals",
+]
+
+[tool.uv.sources]
+pipeline-doctor-agent = { workspace = true }
+pd-mcp-github = { workspace = true }
+pd-mcp-jira = { workspace = true }
+pd-rag = { workspace = true }
+pd-sandbox = { workspace = true }
+pd-evals = { workspace = true }
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+# E/F pycodestyle+pyflakes, I imports, B bugbear, UP pyupgrade, S bandit, SIM, RUF
+select = ["E", "F", "I", "B", "UP", "S", "SIM", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S101"]  # asserts are fine in tests
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+explicit_package_bases = true
+mypy_path = ["agent/src", "mcp-servers/github/src", "mcp-servers/jira/src", "rag/src", "sandbox/src", "evals/src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["agent/tests", "mcp-servers/github/tests", "mcp-servers/jira/tests", "rag/tests", "sandbox/tests", "evals/tests"]
+addopts = "--import-mode=importlib"
