@@ -3,7 +3,10 @@ name = "pd-mcp-jira"
 version = "0.0.0"
 description = "Jira MCP server (search, create, comment)."
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "mcp==2.3.0",
+    "pydantic==2.14.3",
+]
 
 [build-system]
 requires = ["hatchling"]

@@ -1,0 +1,62 @@
+# MCP servers
+
+Three servers give the agents their tools. Each runs over stdio, has a **mock mode** backed by `fixtures/`, and is built so the model can only do what code allows.
+
+| Server | Language | Tools | Writes |
+|---|---|---|---|
+| Jenkins (`mcp-servers/jenkins`) | Go | `get_build`, `get_failed_log_excerpt`, `get_test_report`, `get_last_successful_build` | none. `rebuild` exists only if `JENKINS_REBUILD_ENABLED=true` |
+| GitHub (`mcp-servers/github`) | Python | `list_commits_between`, `get_commit_diff`, `get_file`, `get_codeowners` | `create_branch`, `open_draft_pull_request`, both restricted |
+| Jira (`mcp-servers/jira`) | Python | `search_similar_issues` | `create_issue`, `add_comment` (one project, set by config) |
+
+## Design rules applied to every tool
+
+1. **Compact outputs.** Only the fields the agent needs. The log tool returns error lines from the failed stage (default 50, max 200 lines), never the full log. Diffs, files and messages are truncated and flagged `truncated`.
+2. **Strict input validation, in the schema.** Patterns and length limits live in the JSON Schema (the model sees them) and are enforced before handler code runs. Paths reject `..`, absolute paths and backslashes.
+3. **Errors the model can act on.** `not found ... use SHAs from get_build`, `refused: ... use add_comment on DEMO-7 instead`. Errors are tool results (`isError`), not protocol failures, so the model can self-correct.
+4. **Untrusted content is labelled.** Tools returning logs, commits, diffs, files or ticket text say so in their description. This is defence in depth: the real defence is that no tool can do harm (rule 5) and prompts delimit this content (Phase 4).
+5. **Writes are restricted in code, not by prompting.**
+   - Branches must start with `pipeline-doctor/`; unsafe names (`..`, `//`, `.lock`) are refused.
+   - Writing to the default branch is refused explicitly.
+   - Pull requests are always drafts, must come from a `pipeline-doctor/` branch and may only target the default branch. A footer is appended by code.
+   - Jira `create_issue` refuses when an open issue with the same fingerprint exists (prevents duplicate tickets); there is no project argument.
+6. **Read-only annotations** (`readOnlyHint`) mark read tools so clients and the Phase 4 policy layer can tell them apart.
+7. **Backend interface.** Tools depend on a backend (Go interface / Python Protocol). Mock mode is the fixture backend; real backends arrive in Phase 10 without touching the tools.
+
+Writes in mock mode only change in-memory state.
+
+## Run and test
+
+```sh
+make test test-go          # all tests, in-process, no network
+```
+
+Run a server over stdio (stdout is the protocol; logs go to stderr):
+
+```sh
+MCP_MODE=mock FIXTURES_DIR=fixtures go run ./mcp-servers/jenkins/cmd/jenkins-mcp
+MCP_MODE=mock FIXTURES_DIR=fixtures uv run python -m pd_mcp_github
+MCP_MODE=mock FIXTURES_DIR=fixtures uv run python -m pd_mcp_jira
+```
+
+### Try them with the MCP Inspector
+
+The Inspector is an interactive UI for calling tools by hand. It runs through `npx` (downloads the package on first use), from the repo root:
+
+```sh
+npx @modelcontextprotocol/inspector -e MCP_MODE=mock -e FIXTURES_DIR=fixtures \
+  uv run python -m pd_mcp_github
+```
+
+Then open the printed URL, **Connect**, **Tools -> List Tools**, and try:
+
+- `list_commits_between` with `repo=acme/demo-service`, `base_sha=a1b2c3d4e5f60718293a4b5c6d7e8f9012345678`, `head_sha=c3d4e5f60718293a4b5c6d7e8f90123456789012`
+- `create_branch` with `name=main` (refused) and `name=pipeline-doctor/fix-1` (allowed)
+- Jira: `search_similar_issues` with `fingerprint=fdacb5a1cf4e5ebe`, then `create_issue` with the same fingerprint (refused as duplicate)
+
+For the Go server use `-- go run ./mcp-servers/jenkins/cmd/jenkins-mcp` with the same `-e` flags; try `get_failed_log_excerpt` with `job=demo-service/main`, `build=12`.
+
+## Known limitations
+
+- When `max_lines` is smaller than the number of error lines, the head+tail truncation can drop useful middle lines. Phase 3 pre-processing selects the key lines deterministically before any LLM sees them.
+- Scrubbing of secrets from logs is done in Phase 3 (before LLM input); the Jenkins server does not scrub yet.
+- Real Jenkins/GitHub/Jira backends: Phase 10.

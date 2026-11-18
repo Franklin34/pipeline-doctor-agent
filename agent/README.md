@@ -1,5 +1,3 @@
 # agent
 
-ADK agents, deterministic preprocessing, policy gate and queue worker.
-
-_Status: scaffold only (Phase 0)._
+Python agent package: deterministic pre-processing (Phase 3, see [docs/preprocess.md](../docs/preprocess.md)); ADK agents, policy gate and worker arrive in Phase 4.

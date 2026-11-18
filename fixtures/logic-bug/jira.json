@@ -1,0 +1,12 @@
+{
+  "project": "DEMO",
+  "issues": [
+    {
+      "key": "DEMO-3",
+      "summary": "Flaky login test on CI",
+      "status": "Done",
+      "fingerprint": "1111aaaa2222bbbb",
+      "url": "https://example.atlassian.net/browse/DEMO-3"
+    }
+  ]
+}

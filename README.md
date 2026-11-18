@@ -2,7 +2,7 @@
 
 An AI agent system that investigates failed Jenkins pipelines, finds the root cause in GitHub, opens a **draft** pull request when a fix is safe, and creates or updates a Jira ticket. Humans keep control of every change that reaches the codebase: the agent never merges, never pushes to the default branch, and never changes infrastructure.
 
-See [docs/architecture.md](docs/architecture.md).
+See [docs/architecture.md](docs/architecture.md) and [docs/ingress.md](docs/ingress.md), [docs/mcp-servers.md](docs/mcp-servers.md), [docs/preprocess.md](docs/preprocess.md).
 
 ## Quick start
 
@@ -17,10 +17,10 @@ Requires uv, Go 1.27 and Docker. uv manages Python 3.13.
 
 | Phase | Scope | State |
 |---|---|---|
-| 0 | Foundations | in review |
-| 1 | Ingress + queue | - |
-| 2 | MCP servers (mock) | - |
-| 3 | Preprocessing | - |
+| 0 | Foundations | done |
+| 1 | Ingress + queue | done |
+| 2 | MCP servers (mock) | done |
+| 3 | Preprocessing | in review |
 | 4 | Agents (diagnosis) | - |
 | 5 | RAG | - |
 | 6 | Jira tickets | - |

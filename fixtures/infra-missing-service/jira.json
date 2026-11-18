@@ -1,0 +1,12 @@
+{
+  "project": "DEMO",
+  "issues": [
+    {
+      "key": "DEMO-7",
+      "summary": "payments-api integration tests cannot reach postgres",
+      "status": "Open",
+      "fingerprint": "fdacb5a1cf4e5ebe",
+      "url": "https://example.atlassian.net/browse/DEMO-7"
+    }
+  ]
+}

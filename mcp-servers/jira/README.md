@@ -1,5 +1,5 @@
 # mcp-servers/jira
 
-Jira MCP server (search, create, comment).
+Jira MCP server (Python). See [docs/mcp-servers.md](../../docs/mcp-servers.md).
 
-_Status: scaffold only (Phase 0)._
+Run: see "Run and test" in the docs.

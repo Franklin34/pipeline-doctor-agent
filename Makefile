@@ -32,8 +32,10 @@ test-go: ## Go tests with the race detector
 
 check: lint typecheck test test-go ## Everything CI runs
 
-up: ## Start the local stack (Phase 1+)
-	@echo "No compose stack yet."
+COMPOSE := docker compose --env-file .env -f deploy/compose/docker-compose.yml
+
+up: ## Start the local stack (needs .env)
+	$(COMPOSE) up --build -d
 
 down: ## Stop the local stack
-	@echo "No compose stack yet."
+	$(COMPOSE) down

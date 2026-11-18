@@ -3,7 +3,10 @@ name = "pipeline-doctor-agent"
 version = "0.0.0"
 description = "ADK agents, deterministic preprocessing, policy gate and queue worker."
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "defusedxml==0.7.1",
+    "pydantic==2.14.3",
+]
 
 [build-system]
 requires = ["hatchling"]

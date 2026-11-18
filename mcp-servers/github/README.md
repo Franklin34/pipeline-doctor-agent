@@ -1,5 +1,5 @@
 # mcp-servers/github
 
-GitHub MCP server (read tools plus restricted writes).
+GitHub MCP server (Python). See [docs/mcp-servers.md](../../docs/mcp-servers.md).
 
-_Status: scaffold only (Phase 0)._
+Run: see "Run and test" in the docs.

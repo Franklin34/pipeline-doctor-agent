@@ -1,0 +1,57 @@
+{
+  "repo": "acme/demo-service",
+  "default_branch": "main",
+  "commits": [
+    {
+      "sha": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+      "author": "dev2",
+      "date": "2026-11-10T09:00:00Z",
+      "message": "Add pricing module",
+      "files": []
+    },
+    {
+      "sha": "b2c3d4e5f60718293a4b5c6d7e8f901234567890",
+      "author": "dev3",
+      "date": "2026-11-11T10:00:00Z",
+      "message": "Update README usage section",
+      "files": [
+        {
+          "path": "README.md",
+          "status": "modified",
+          "patch": "@@ -1,2 +1,3 @@\n # demo-service\n+Run with `make run`."
+        }
+      ]
+    },
+    {
+      "sha": "c3d4e5f60718293a4b5c6d7e8f90123456789012",
+      "author": "dev1",
+      "date": "2026-11-12T11:30:00Z",
+      "message": "Refactor discount calculation",
+      "files": [
+        {
+          "path": "app/pricing.py",
+          "status": "modified",
+          "patch": "@@ -1,3 +1,3 @@\n def apply_discount(price: float, rate: float) -> float:\n-    return price * (1 - rate)\n+    return price * rate"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "app/pricing.py",
+      "ref": "c3d4e5f60718293a4b5c6d7e8f90123456789012",
+      "content": "def apply_discount(price: float, rate: float) -> float:\n    return price * rate\n"
+    },
+    {
+      "path": "app/pricing.py",
+      "ref": "main",
+      "content": "def apply_discount(price: float, rate: float) -> float:\n    return price * rate\n"
+    },
+    {
+      "path": "tests/test_pricing.py",
+      "ref": "c3d4e5f60718293a4b5c6d7e8f90123456789012",
+      "content": "from app.pricing import apply_discount\n\n\ndef test_apply_discount():\n    assert apply_discount(100.0, 0.1) == 90.0\n"
+    }
+  ],
+  "codeowners": "# Owners\n* @acme/platform\n/app/pricing.py @dev1 @acme/billing\n/docs/ @dev3\n"
+}

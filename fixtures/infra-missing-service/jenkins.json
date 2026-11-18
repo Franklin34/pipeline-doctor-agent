@@ -1,0 +1,61 @@
+{
+  "job": "payments-api/main",
+  "builds": [
+    {
+      "number": 29,
+      "result": "SUCCESS",
+      "commit_sha": "e5f60718293a4b5c6d7e8f90123456789012345a",
+      "duration_s": 140,
+      "url": "https://jenkins.example/job/payments-api/main/29/",
+      "failed_stage": null
+    },
+    {
+      "number": 30,
+      "result": "FAILURE",
+      "commit_sha": "d4e5f60718293a4b5c6d7e8f9012345678901234",
+      "duration_s": 48,
+      "url": "https://jenkins.example/job/payments-api/main/30/",
+      "failed_stage": "Integration Test"
+    }
+  ],
+  "logs": {
+    "30": [
+      "Started by user dev1",
+      "[Pipeline] Start of Pipeline",
+      "[Pipeline] { (Checkout)",
+      "Cloning repository https://github.com/acme/payments-api.git",
+      "Checking out Revision d4e5f60 (refs/remotes/origin/main)",
+      "[Pipeline] }",
+      "[Pipeline] { (Integration Test)",
+      "+ pytest -m integration -q",
+      "E   psycopg2.OperationalError: connection to server at \"postgres\" (172.18.0.3), port 5432 failed: Connection refused",
+      "E   \tIs the server running on that host and accepting TCP/IP connections?",
+      "FAILED tests/integration/test_orders.py::test_create_order - psycopg2.OperationalError",
+      "FAILED tests/integration/test_orders.py::test_list_orders - psycopg2.OperationalError",
+      "2 failed in 31.02s",
+      "ERROR: script returned exit code 1",
+      "[Pipeline] }",
+      "[Pipeline] // stage",
+      "[Pipeline] End of Pipeline",
+      "Finished: FAILURE"
+    ]
+  },
+  "test_reports": {
+    "30": {
+      "passed": 0,
+      "failed": [
+        {
+          "class_name": "tests.integration.test_orders",
+          "name": "test_create_order",
+          "message": "psycopg2.OperationalError: connection refused"
+        },
+        {
+          "class_name": "tests.integration.test_orders",
+          "name": "test_list_orders",
+          "message": "psycopg2.OperationalError: connection refused"
+        }
+      ],
+      "skipped": 0
+    }
+  }
+}

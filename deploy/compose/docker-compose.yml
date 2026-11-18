@@ -1,0 +1,29 @@
+# Local stack. Grows each phase. Run from the repo root: make up
+services:
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["6379:6379"]
+    volumes: ["redis-data:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  ingress:
+    build: ../../services/ingress
+    environment:
+      WEBHOOK_SHARED_SECRET: ${WEBHOOK_SHARED_SECRET:?set WEBHOOK_SHARED_SECRET in .env}
+      REDIS_URL: redis://redis:6379/0
+      INGRESS_ADDR: ":8080"
+    ports: ["8080:8080"]
+    depends_on:
+      redis:
+        condition: service_healthy
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+
+volumes:
+  redis-data:
