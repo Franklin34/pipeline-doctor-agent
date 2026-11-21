@@ -21,6 +21,9 @@ func TestLoad(t *testing.T) {
 		{"bad ttl", map[string]string{"WEBHOOK_SHARED_SECRET": secret, "IDEMPOTENCY_TTL": "soon"}, true},
 		{"zero ttl", map[string]string{"WEBHOOK_SHARED_SECRET": secret, "IDEMPOTENCY_TTL": "0s"}, true},
 		{"bad max body", map[string]string{"WEBHOOK_SHARED_SECRET": secret, "MAX_BODY_BYTES": "-1"}, true},
+		{"pubsub with project", map[string]string{"WEBHOOK_SHARED_SECRET": secret, "QUEUE_BACKEND": "pubsub", "PUBSUB_PROJECT": "p"}, false},
+		{"pubsub without project", map[string]string{"WEBHOOK_SHARED_SECRET": secret, "QUEUE_BACKEND": "pubsub"}, true},
+		{"unknown backend", map[string]string{"WEBHOOK_SHARED_SECRET": secret, "QUEUE_BACKEND": "kafka"}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

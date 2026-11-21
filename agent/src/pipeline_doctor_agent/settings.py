@@ -66,6 +66,21 @@ class Settings:
         ""  # comma-separated owner/name list: the only repositories reachable
     )
     github_api_url: str = "https://api.github.com"
+    # queue transport: redis (local) or pubsub (cloud). The worker always needs Redis too: the
+    # idempotency keys (pd:done, pd:lease, ...) live there.
+    queue_backend: str = "redis"
+    pubsub_project: str = ""
+    pubsub_subscription: str = "pipeline-doctor-worker"
+    pubsub_dead_letter_topic: str = "pipeline-failed-dlq"
+    pubsub_ack_deadline_s: int = 60
+    # real Jira Cloud (JIRA_MODE=real); the API token is kept out of repr()
+    jira_mode: str | None = None  # None: follow MCP_MODE
+    jira_base_url: str = ""
+    jira_email: str = ""
+    jira_api_token: str | None = field(default=None, repr=False)
+    jira_project_key: str = ""
+    jira_issue_type: str = "Task"
+    jira_user_map_file: str | None = None
     # observability
     metrics_addr: str = "127.0.0.1"  # bind address of /metrics; 0.0.0.0 only inside a container
     metrics_port: int = 9102  # 0 disables the metrics endpoint
@@ -85,6 +100,14 @@ class Settings:
             raise ValueError("FIX_MAX_ATTEMPTS must be between 1 and 3")
         if self.fix_timeout_s <= 0 or self.sandbox_test_timeout_s <= 0 or self.sandbox_cpus <= 0:
             raise ValueError("fix and sandbox limits must be positive")
+        if self.queue_backend not in {"redis", "pubsub"}:
+            raise ValueError("QUEUE_BACKEND must be redis or pubsub")
+        if self.queue_backend == "pubsub" and not self.pubsub_project:
+            raise ValueError("PUBSUB_PROJECT must be set when QUEUE_BACKEND=pubsub")
+        if not 10 <= self.pubsub_ack_deadline_s <= 600:
+            raise ValueError("PUBSUB_ACK_DEADLINE_SECONDS must be between 10 and 600")
+        if self.effective_jira_mode not in {"mock", "real"}:
+            raise ValueError("JIRA_MODE must be mock or real")
         if self.effective_github_mode not in {"mock", "real"}:
             raise ValueError("GITHUB_MODE must be mock or real")
         if self.embedder not in {"gemini", "hash"}:
@@ -98,6 +121,24 @@ class Settings:
     @property
     def effective_github_mode(self) -> str:
         return self.github_mode or self.mcp_mode
+
+    @property
+    def effective_jira_mode(self) -> str:
+        return self.jira_mode or self.mcp_mode
+
+    def jira_env(self) -> dict[str, str]:
+        """Environment for the Jira MCP subprocess; the API token goes only here."""
+        env = {"MCP_MODE": self.effective_jira_mode, "FIXTURES_DIR": self.fixtures_dir}
+        if self.effective_jira_mode == "real":
+            env |= {
+                "JIRA_BASE_URL": self.jira_base_url,
+                "JIRA_EMAIL": self.jira_email,
+                "JIRA_API_TOKEN": self.jira_api_token or "",
+                "JIRA_PROJECT_KEY": self.jira_project_key,
+                "JIRA_ISSUE_TYPE": self.jira_issue_type,
+                "JIRA_USER_MAP_FILE": self.jira_user_map_file or "",
+            }
+        return env
 
     def github_env(self) -> dict[str, str]:
         """Environment for the GitHub MCP subprocess. The token goes ONLY to this server: the Jenkins
@@ -154,6 +195,18 @@ class Settings:
             github_token=e.get("GITHUB_TOKEN") or None,
             github_allowed_repos=e.get("GITHUB_ALLOWED_REPOS", d.github_allowed_repos),
             github_api_url=e.get("GITHUB_API_URL", d.github_api_url),
+            queue_backend=e.get("QUEUE_BACKEND", d.queue_backend),
+            pubsub_project=e.get("PUBSUB_PROJECT", d.pubsub_project),
+            pubsub_subscription=e.get("PUBSUB_SUBSCRIPTION", d.pubsub_subscription),
+            pubsub_dead_letter_topic=e.get("PUBSUB_DEAD_LETTER_TOPIC", d.pubsub_dead_letter_topic),
+            pubsub_ack_deadline_s=_int(e, "PUBSUB_ACK_DEADLINE_SECONDS", d.pubsub_ack_deadline_s),
+            jira_mode=e.get("JIRA_MODE") or None,
+            jira_base_url=e.get("JIRA_BASE_URL", d.jira_base_url),
+            jira_email=e.get("JIRA_EMAIL", d.jira_email),
+            jira_api_token=e.get("JIRA_API_TOKEN") or None,
+            jira_project_key=e.get("JIRA_PROJECT_KEY", d.jira_project_key),
+            jira_issue_type=e.get("JIRA_ISSUE_TYPE", d.jira_issue_type),
+            jira_user_map_file=e.get("JIRA_USER_MAP_FILE") or None,
             metrics_addr=e.get("METRICS_ADDR", d.metrics_addr),
             metrics_port=_int(e, "METRICS_PORT", d.metrics_port),
             otlp_endpoint=e.get("OTEL_EXPORTER_OTLP_ENDPOINT") or None,

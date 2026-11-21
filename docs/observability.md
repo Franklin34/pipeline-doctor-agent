@@ -74,3 +74,6 @@ The Grafana dashboard ("Pipeline Doctor") is provisioned from `deploy/observabil
 ## What is and isn't verified
 - Verified by tests: metric values through the real queue, handler, investigator and ticket flow; trace continuation from the event's `traceparent`; no content in spans (with a control that proves the test can see a leak); JSON logs; the `/metrics` endpoint over HTTP; every alert and dashboard query uses metrics and label values that exist in the code.
 - **Not yet verified against real Prometheus, Grafana or Jaeger processes**: the PromQL has never been parsed by Prometheus (CI runs `promtool check rules`, but it has not run on GitHub), and the dashboard JSON has never been loaded by Grafana. Do that with the compose profile before relying on it.
+
+## With Pub/Sub (cloud)
+The worker cannot read queue depth from Pub/Sub, so `pd_queue_pending_messages`, `pd_queue_lag_messages` and `pd_dlq_messages` stay unset and `pd_worker_last_poll_timestamp_seconds` is the only queue signal it exports. The Prometheus alerts `PipelineDoctorDlqNotEmpty` and `PipelineDoctorQueueBacklog` therefore do not apply; `deploy/terraform/monitoring.tf` defines the Cloud Monitoring equivalents on the subscriptions' own metrics (`num_undelivered_messages` on the dead-letter subscription, `oldest_unacked_message_age` on the worker's).

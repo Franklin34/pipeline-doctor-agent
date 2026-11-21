@@ -1,0 +1,17 @@
+# The worker image is built from the repository root. Nothing secret or bulky may enter the context.
+.env
+.env.*
+!.env.example
+.git
+.venv
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/node_modules
+deploy/terraform/.terraform
+**/*.tfstate*
+**/*.tfvars
+docs
+fixtures/repos

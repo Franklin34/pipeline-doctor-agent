@@ -8,7 +8,7 @@ Failures must be processed reliably and decoupled from the webhook request. Loca
 ## Decision
 - A small `queue.Queue` interface (`Publish`, `Consume`, `Ping`) carrying opaque bytes.
 - Redis Streams adapter for local use: consumer groups, native delivery counts for retries, `XAUTOCLAIM` for redelivery, a dead-letter stream after `MAX_ATTEMPTS`.
-- Cloud Pub/Sub adapter (Phase 10) with a dead-letter topic configured in Terraform.
+- Cloud Pub/Sub adapter with a dead-letter topic configured in Terraform (see ADR 0010).
 - Delivery is at-least-once; consumers are idempotent via `idempotency_key`.
 
 ## Consequences

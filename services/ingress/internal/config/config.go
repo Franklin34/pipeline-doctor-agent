@@ -19,6 +19,9 @@ type Config struct {
 	MaxBodyBytes    int64
 	ShutdownTimeout time.Duration
 	StreamMaxLen    int64
+	QueueBackend    string // "redis" (default) or "pubsub"
+	PubSubProject   string
+	PubSubTopic     string
 }
 
 // Load reads configuration using getenv (os.Getenv in production) so tests
@@ -39,6 +42,9 @@ func Load(getenv func(string) string) (Config, error) {
 		MaxBodyBytes:    1 << 20,
 		ShutdownTimeout: 10 * time.Second,
 		StreamMaxLen:    100_000,
+		QueueBackend:    str("QUEUE_BACKEND", "redis"),
+		PubSubProject:   getenv("PUBSUB_PROJECT"),
+		PubSubTopic:     str("PUBSUB_TOPIC", "pipeline-failed"),
 	}
 	var err error
 	if c.IdempotencyTTL, err = time.ParseDuration(str("IDEMPOTENCY_TTL", "24h")); err != nil {
@@ -51,6 +57,15 @@ func Load(getenv func(string) string) (Config, error) {
 		if c.MaxBodyBytes, err = strconv.ParseInt(v, 10, 64); err != nil || c.MaxBodyBytes < 1 {
 			return Config{}, errors.New("MAX_BODY_BYTES must be a positive integer")
 		}
+	}
+	switch c.QueueBackend {
+	case "redis":
+	case "pubsub":
+		if c.PubSubProject == "" {
+			return Config{}, errors.New("PUBSUB_PROJECT must be set when QUEUE_BACKEND=pubsub")
+		}
+	default:
+		return Config{}, errors.New("QUEUE_BACKEND must be redis or pubsub")
 	}
 	if len(c.WebhookSecret) < 16 {
 		return Config{}, errors.New("WEBHOOK_SHARED_SECRET must be set (min 16 bytes)")

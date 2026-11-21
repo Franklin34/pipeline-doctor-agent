@@ -20,7 +20,7 @@ Three servers give the agents their tools. Each runs over stdio, has a **mock mo
    - Pull requests are always drafts, must come from a `pipeline-doctor/` branch and may only target the default branch. A footer is appended by code.
    - Jira `create_issue` refuses when an open issue with the same fingerprint exists (prevents duplicate tickets); there is no project argument.
 6. **Read-only annotations** (`readOnlyHint`) mark read tools so clients and the Phase 4 policy layer can tell them apart.
-7. **Backend interface.** Tools depend on a backend (Go interface / Python Protocol). Mock mode is the fixture backend; real backends arrive in Phase 10 without touching the tools.
+7. **Backend interface.** Tools depend on a backend (Go interface / Python Protocol). Mock mode is the fixture backend; real GitHub and Jira backends sit behind the same interface (below); Jenkins is still fixtures-only.
 
 Writes in mock mode only change in-memory state.
 
@@ -58,8 +58,8 @@ For the Go server use `-- go run ./mcp-servers/jenkins/cmd/jenkins-mcp` with the
 ## Known limitations
 
 - When `max_lines` is smaller than the number of error lines, the head+tail truncation can drop useful middle lines. Phase 3 pre-processing selects the key lines deterministically before any LLM sees them.
-- Scrubbing of secrets from logs is done in Phase 3 (before LLM input); the Jenkins server does not scrub yet.
-- Real Jenkins/GitHub/Jira backends: Phase 10.
+- Real Jenkins backend: **not built** (no Jenkins to test against). GitHub and Jira backends exist; see below.
+- Scrubbing happens in the agent and again in the Jenkins server's excerpt step; see docs/preprocess.md.
 
 
 ## Real GitHub mode (Phase 10)
@@ -74,4 +74,21 @@ For the Go server use `-- go run ./mcp-servers/jenkins/cmd/jenkins-mcp` with the
 | Source for fixes | `GitHubTarballSource` downloads the tarball at the failing commit (no `git`, no hooks, no credentials on disk), forwards no credentials to the redirect host, extracts regular files only, and caps size and count. |
 | Errors | Status classes with short messages; never the token or headers. Reads retry on 502/503/504; writes never retry. |
 
-**Verified:** against a fake of the GitHub REST API built from the documented response shapes, with the same tool-level behaviour as the mock. **Not verified against real GitHub** (permissions, rate limits, plan-specific draft PR support, executable file modes: `commit_files` writes mode 100644).
+**Verified against a fake** of the REST API (documented response shapes) and, on 2026-11-21, **against real GitHub** on one private test repository: reads (default branch, commit range, diffs, files), then one write round trip through the full MCP stack (branch, one commit to an existing file, a draft PR; a second request returned the same PR; the default branch was untouched), and live refusals (default branch, other repository, protected paths, new files). **Not verified:** rate-limit behaviour under load, GitHub Enterprise Server, repositories on plans that refuse draft PRs, executable file modes (`commit_files` writes mode 100644), the tarball download path (`GitHubTarballSource`) and the whole queue-to-PR flow against real GitHub.
+
+
+## Real Jira mode (Phase 10)
+
+`JIRA_MODE=real` (or `MCP_MODE=real`) switches the Jira server to Jira Cloud's REST API v3. **Not yet run against a real Jira site.**
+
+| Concern | Rule |
+|---|---|
+| Credentials | Basic auth with a service account's email and API token, passed only to the Jira subprocess, excluded from `Settings.__repr__`. The account should have access to one project. |
+| One project | `JIRA_PROJECT_KEY` is configuration. Searches are constrained to it in JQL, issues are created in it, and comments refuse any other project's keys. |
+| Fingerprint | Stored as the label `pd-fp-<fingerprint>` (searchable, no custom field, visible to humans). The search validates the fingerprint as hex, so JQL cannot be injected. |
+| Format | Descriptions and comments are converted from our wiki-markup subset to **ADF** by building nodes, never by pasting text into markup. Log text containing `{code}`, `[~mention]`, `!image!`, HTML or a `javascript:` link stays inert literal text. |
+| Assignment | CODEOWNERS handles map to Jira account ids through `JIRA_USER_MAP_FILE`. An unmapped or unassignable owner leaves the ticket unassigned; the owners are still listed in the body. |
+| Idempotency | The comment marker is looked up in the issue's last 100 comments before posting. |
+| Retries | Reads (including Jira's read-only POST search) retry on 502/503/504; writes never retry. |
+
+Jira Cloud's search endpoint changed in 2025 (`POST /rest/api/3/search/jql`, token pagination); that is the one used. Workflow transitions, custom issue types and required custom fields are **not** handled: if your project requires extra fields on create, the call fails with Jira's message.

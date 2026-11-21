@@ -1,0 +1,9 @@
+# Extends gitleaks' default rules. The only exception is a deliberately fake credential.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "synthetic secret used to test that the pipeline scrubs credentials from logs"
+paths = [
+  '''^fixtures/expired-credentials/''',
+]

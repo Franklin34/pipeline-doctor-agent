@@ -2,7 +2,7 @@
 GO_MODULES := services/ingress mcp-servers/jenkins
 PY_SRC := agent/src mcp-servers/github/src mcp-servers/jira/src rag/src sandbox/src evals/src
 
-.PHONY: help setup fmt lint typecheck test test-pg test-go eval eval-live check up down ingest
+.PHONY: help setup fmt lint typecheck test test-pg test-go eval eval-live demo tf-validate check up down ingest
 .DEFAULT_GOAL := help
 
 help: ## Show targets
@@ -47,6 +47,12 @@ eval: ## Golden dataset with the scripted model (free, deterministic); fails on 
 
 eval-live: ## Golden dataset with the REAL model (needs credentials; costs money)
 	uv run python -m pd_evals --live
+
+demo: ## Narrated offline run of the real pipeline (scripted model; no keys, no network)
+	uv run python -m pd_evals.demo
+
+tf-validate: ## terraform fmt + validate (no cloud access, no state)
+	cd deploy/terraform && terraform fmt -check -recursive && terraform init -backend=false -input=false >/dev/null && terraform validate
 
 check: lint typecheck test test-go ## Everything CI runs
 	$(MAKE) eval

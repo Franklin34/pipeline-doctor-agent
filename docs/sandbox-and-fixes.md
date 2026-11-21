@@ -58,7 +58,7 @@ Then the **judge** (`pd_sandbox.judge`) decides: the tests exited cleanly, none 
 | Judge | real fix, no removed tests |
 | `pr_publisher` tool policy | only this code identity holds the git write tools; pinned to the failing repo |
 | GitHub MCP server | branch must start with `pipeline-doctor/`, never the default branch, protected paths refused again, draft only, PR only into the default branch, no PR without a commit |
-| GitHub (Phase 10 setup) | branch protection on the default branch, required reviews |
+| GitHub (your setup) | branch protection on the default branch, required reviews |
 | A human | reviews and merges |
 
 The fix LLM has **no tools at all**. Everything it reads from the repository or the build is fenced with a random per-request boundary id (text inside a file cannot fake the end of its block), scrubbed first, and labelled untrusted.
@@ -84,7 +84,8 @@ The Docker tests download one wheel (`pytest`) from PyPI inside the install cont
 
 ## Known limits
 
-- **Mock repositories only.** The checkout comes from `fixtures/repos/<owner>__<name>`; a real git clone (read-only token, not in the URL) arrives in Phase 10. `FIX_ENABLED` is refused outside mock mode until then.
+- **Where the code comes from.** Mock mode copies `fixtures/repos/<owner>__<name>`; real mode downloads the tarball at the failing commit through the GitHub API (`GitHubTarballSource`: no git binary, no credentials on disk, hostile-archive checks, size caps). The real path has been exercised read-only against one repository; a full failure-to-PR run on real GitHub has not been done.
+- **Needs Docker.** The cloud (Cloud Run) deployment cannot run the sandbox, so fixes are off there.
 - **Python and pytest only.** The sandbox command and the JUnit parsing are pytest's; other ecosystems need their own runner.
 - **The install container has network access.** It runs only `pip install --only-binary` of the repository's own requirements (a fix may change versions but never package names); it is non-root, capability-free and limited, but a malicious wheel from the index could still run during unpacking-time hooks. Pin and hash requirements in the target repository for stronger protection.
 - The suspicious-code scan is heuristic. The real guarantees are the sandbox, the judge, the server-side path rules and the human review.

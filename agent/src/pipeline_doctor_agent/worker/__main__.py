@@ -15,7 +15,7 @@ from pipeline_doctor_agent.observability import Metrics, configure_logging, inst
 from pipeline_doctor_agent.observability.server import start_metrics_server
 from pipeline_doctor_agent.settings import Settings
 from pipeline_doctor_agent.ticket import TicketService
-from pipeline_doctor_agent.worker.consumer import StreamConsumer
+from pipeline_doctor_agent.worker.factory import build_consumer
 from pipeline_doctor_agent.worker.handler import EventHandler
 
 
@@ -35,22 +35,14 @@ async def main() -> None:
     # queue's reclaim timeout must both outlast that, or a second worker would pick up the same event.
     lease_s = int(settings.run_timeout_s + (settings.fix_timeout_s if fixer else 0) + 120)
     redis = Redis.from_url(settings.redis_url, decode_responses=True)
-    consumer = StreamConsumer(
+    handler = EventHandler(
         redis,
-        stream=settings.stream,
-        group=settings.group,
-        consumer=settings.consumer,
-        handler=EventHandler(
-            redis,
-            Investigator(settings, searcher=build_searcher(settings)),
-            TicketService(settings),
-            fixer=fixer,
-            lease_s=lease_s,
-        ),
-        max_attempts=settings.max_attempts,
-        min_idle_ms=max(settings.min_idle_ms, lease_s * 1000),
-        block_ms=settings.block_ms,
+        Investigator(settings, searcher=build_searcher(settings)),
+        TicketService(settings),
+        fixer=fixer,
+        lease_s=lease_s,
     )
+    consumer = build_consumer(settings, redis, handler, lease_s=lease_s)
     stop = asyncio.Event()
     loop = asyncio.get_running_loop()
     for sig in (signal.SIGTERM, signal.SIGINT):

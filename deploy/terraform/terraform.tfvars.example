@@ -1,0 +1,6 @@
+project_id           = "your-dedicated-project"
+region               = "us-central1"
+ingress_image        = "us-central1-docker.pkg.dev/your-dedicated-project/pipeline-doctor/ingress:TAG"
+worker_image         = "us-central1-docker.pkg.dev/your-dedicated-project/pipeline-doctor/worker:TAG"
+github_allowed_repos = "your-user/your-test-repo"
+alert_email          = ""

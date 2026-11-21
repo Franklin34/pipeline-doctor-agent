@@ -31,7 +31,7 @@ func run(log *slog.Logger) error {
 		mode = "mock"
 	}
 	if mode != "mock" {
-		return errors.New("MCP_MODE=" + mode + " is not supported yet; real Jenkins arrives in Phase 10")
+		return errors.New("MCP_MODE=" + mode + " is not supported: only fixture mode exists (no real Jenkins backend has been built)")
 	}
 	dir := os.Getenv("FIXTURES_DIR")
 	if dir == "" {

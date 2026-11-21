@@ -27,14 +27,24 @@ jobs:
     env:
       PD_TEST_DATABASE_URL: postgresql://postgres:pdtest@localhost:5432/pdtest
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
-      - uses: actions/setup-go@v7  # agent tests build the Go Jenkins MCP server
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7  # agent tests build the Go Jenkins MCP server
         with:
           go-version-file: services/ingress/go.mod
       - run: uv sync --all-packages --locked
       # The sandbox tests prove isolation against real Docker; they also fetch one wheel (pytest) from PyPI.
       - run: docker pull python:3.13-slim
+      # Terraform: formatting and provider-schema validation. No credentials, no state, nothing is applied.
+      - run: >
+          docker run --rm -v "$PWD/deploy/terraform:/tf" -w /tf hashicorp/terraform:1.17.2
+          fmt -check -recursive
+      - run: >
+          docker run --rm -v "$PWD/deploy/terraform:/tf" -w /tf hashicorp/terraform:1.17.2
+          init -backend=false -input=false
+      - run: >
+          docker run --rm -v "$PWD/deploy/terraform:/tf" -w /tf hashicorp/terraform:1.17.2
+          validate
       # Alert rules and config are checked by Prometheus' own tool, not just by our unit tests.
       - run: >
           docker run --rm --entrypoint promtool
@@ -50,13 +60,13 @@ jobs:
   go:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7
         with:
           go-version-file: services/ingress/go.mod
       - run: make lint
       - run: make test-go
 
-  # Enabled in later phases:
-  #   containers: build images + Trivy scan (Phase 1/10)
-  #   evals-mock: mock-mode eval suite (Phase 9)
+  # Not yet in CI (each needs more time or credentials than a PR check should spend):
+  #   container image build + vulnerability scan
+  #   the Pub/Sub emulator tests (a 1.5 GB image) and the live-GitHub checks

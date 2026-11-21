@@ -15,6 +15,7 @@ import (
 
 	"github.com/Franklin34/pipeline-doctor-agent/services/ingress/internal/config"
 	"github.com/Franklin34/pipeline-doctor-agent/services/ingress/internal/dedupe"
+	pubsubq "github.com/Franklin34/pipeline-doctor-agent/services/ingress/internal/queue/pubsub"
 	"github.com/Franklin34/pipeline-doctor-agent/services/ingress/internal/queue/redisstreams"
 	"github.com/Franklin34/pipeline-doctor-agent/services/ingress/internal/server"
 	"github.com/Franklin34/pipeline-doctor-agent/services/ingress/internal/telemetry"
@@ -50,13 +51,27 @@ func run(log *slog.Logger) error {
 	rdb := redis.NewClient(opts)
 	defer func() { _ = rdb.Close() }()
 
-	q, err := redisstreams.New(rdb, redisstreams.Config{
-		Stream: cfg.Stream, DLQStream: cfg.Stream + "-dlq", Group: "pipeline-doctor",
-		Consumer: "ingress", MaxAttempts: 1, MinIdle: time.Minute, BlockTime: time.Second,
-		MaxLen: cfg.StreamMaxLen,
-	}, log) // ingress only publishes; consumer settings are unused here
-	if err != nil {
-		return err
+	// The Redis client above is always used for webhook de-duplication; the queue itself is either
+	// Redis Streams (local development) or Pub/Sub (cloud).
+	var q server.Publisher
+	switch cfg.QueueBackend {
+	case "pubsub":
+		ps, err := pubsubq.New(ctx, cfg.PubSubProject, cfg.PubSubTopic)
+		if err != nil {
+			return err
+		}
+		defer func() { _ = ps.Close() }()
+		q = ps
+	default:
+		rq, err := redisstreams.New(rdb, redisstreams.Config{
+			Stream: cfg.Stream, DLQStream: cfg.Stream + "-dlq", Group: "pipeline-doctor",
+			Consumer: "ingress", MaxAttempts: 1, MinIdle: time.Minute, BlockTime: time.Second,
+			MaxLen: cfg.StreamMaxLen,
+		}, log) // ingress only publishes; consumer settings are unused here
+		if err != nil {
+			return err
+		}
+		q = rq
 	}
 
 	srv := &http.Server{

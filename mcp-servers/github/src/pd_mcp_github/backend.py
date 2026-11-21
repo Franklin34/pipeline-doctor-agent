@@ -41,7 +41,7 @@ class RawRepo(BaseModel):
 
 
 class GitHubBackend(Protocol):
-    """What the tools need. A real REST/GraphQL backend arrives in Phase 10."""
+    """What the tools need. ``MockBackend`` serves fixtures; ``rest.RestBackend`` talks to GitHub."""
 
     def default_branch(self, repo: str) -> str: ...
     def commits_between(self, repo: str, base: str, head: str) -> list[RawCommit]: ...

@@ -291,7 +291,7 @@ def default_jira_client(settings: Settings) -> Client:
         StdioServerParameters(
             command=cmd[0],
             args=cmd[1:],
-            env={"MCP_MODE": settings.mcp_mode, "FIXTURES_DIR": settings.fixtures_dir},
+            env=settings.jira_env(),
         )
     )
 

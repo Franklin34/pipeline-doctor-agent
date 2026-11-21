@@ -1,6 +1,6 @@
 // Package jenkins defines the backend contract the MCP tools depend on, plus a
-// fixture-backed implementation for mock mode. A real HTTP backend arrives in
-// Phase 10 behind the same interface.
+// fixture-backed implementation for mock mode. A real HTTP backend has not been
+// built; it would sit behind the same interface.
 package jenkins
 
 import (

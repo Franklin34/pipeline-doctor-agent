@@ -26,7 +26,7 @@ class LocalRepoSource:
     """Mock mode: copies ``<root>/<owner>__<name>``. The directory stands for the failing commit.
 
     Symlinks are never followed or copied (a link could point at host files that would then be
-    read into a prompt), and the copy is size-limited. A real git source arrives in Phase 10.
+    read into a prompt), and the copy is size-limited. The real source is in ``github_source.py``.
     """
 
     def __init__(self, root: Path) -> None:

@@ -1,5 +1,5 @@
 // Package queue defines the transport-agnostic queue interface. Adapters:
-// redisstreams (local dev) and, in Phase 10, Google Cloud Pub/Sub.
+// redisstreams (local dev, publish and consume) and pubsub (cloud, publish only: the worker pulls).
 //
 // Delivery is at-least-once: consumers MUST be idempotent.
 package queue

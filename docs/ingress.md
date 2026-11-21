@@ -31,7 +31,7 @@ Sign it: `printf '%s' "$BODY" | openssl dgst -sha256 -hmac "$WEBHOOK_SHARED_SECR
 | Retries | Redis delivery count (`XPENDING`); unacked messages are re-claimed with `XAUTOCLAIM` after `MinIdle` |
 | Dead-lettering | when the delivery count reaches `MAX_ATTEMPTS`, or a reclaimed message already exceeds it |
 
-Delivery is **at least once**: consumers must be idempotent (use `idempotency_key`). The Go `queue.Queue` interface (`Publish`, `Consume`, `Ping`) is transport-agnostic; the Pub/Sub adapter arrives in Phase 10. The Python worker (Phase 4) implements the same protocol.
+Delivery is **at least once**: consumers must be idempotent (use `idempotency_key`). The Go `queue.Queue` interface (`Publish`, `Consume`, `Ping`) is transport-agnostic; the Pub/Sub publisher is in `internal/queue/pubsub` (selected with `QUEUE_BACKEND=pubsub`). The Python worker (Phase 4) implements the same protocol.
 
 ## Endpoints
 

@@ -110,3 +110,15 @@ def strings_in(obj: Any, *, limit: int = MAX_SCAN_CHARS) -> str:
 
 def dedupe(flags: Iterable[Flag]) -> tuple[Flag, ...]:
     return tuple(dict.fromkeys(flags))
+
+
+def summarise(flags: Iterable[Flag]) -> tuple[str, ...]:
+    """One human-readable line per kind, listing every place it was seen."""
+    where: dict[str, list[str]] = {}
+    for f in flags:
+        where.setdefault(f.kind, [])
+        if f.where not in where[f.kind]:
+            where[f.kind].append(f.where)
+    return tuple(
+        f"{kind.replace('_', ' ')} in {', '.join(places)}" for kind, places in where.items()
+    )

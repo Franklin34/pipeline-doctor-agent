@@ -175,6 +175,9 @@ async def test_compromised_model_cannot_write(settings: Settings) -> None:
         r.tool in {"create_branch", "open_draft_pull_request"} and r.status == "ok"
         for r in result.audit
     )
+    # each refused call is audited exactly once, as "blocked" (not again as an "error")
+    refused = [r for r in result.audit if r.tool in {"create_branch", "open_draft_pull_request"}]
+    assert [r.status for r in refused] == ["blocked", "blocked"]
 
 
 async def test_injection_scenario_commit_message_is_data_not_instructions(

@@ -40,7 +40,7 @@ from pipeline_doctor_agent.schemas import (
     PipelineFailedEvent,
     parse_model_json,
 )
-from pipeline_doctor_agent.screening import Flag, dedupe, screen
+from pipeline_doctor_agent.screening import Flag, dedupe, screen, summarise
 from pipeline_doctor_agent.settings import Settings
 
 log = logging.getLogger("pipeline_doctor.investigator")
@@ -247,14 +247,10 @@ class Investigator:
 
         # 5. The gate: plain code decides what may happen next.
         flags = dedupe([*_screen_facts(facts.processed), *guard.flags])
-        for flag in flags:
-            metrics.current().injection_flag(flag.kind)
-        decision = decide(
-            diagnosis,
-            codef,
-            threshold=s.fix_threshold,
-            injection_flags=tuple(str(f) for f in flags),
-        )
+        for kind in dict.fromkeys(f.kind for f in flags):
+            metrics.current().injection_flag(kind)  # once per kind per run
+        flag_lines = summarise(flags)  # one line per kind, listing where it was seen
+        decision = decide(diagnosis, codef, threshold=s.fix_threshold, injection_flags=flag_lines)
         result = InvestigationResult(
             event=event,
             processed=facts.processed,
@@ -268,7 +264,7 @@ class Investigator:
             ),
             audit=tuple(audit.records),
             duration_s=time.monotonic() - started,
-            injection_flags=tuple(str(f) for f in flags),
+            injection_flags=flag_lines,
         )
         log.info(
             "investigation complete",
