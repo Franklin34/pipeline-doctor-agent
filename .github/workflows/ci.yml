@@ -14,14 +14,38 @@ concurrency:
 jobs:
   python:
     runs-on: ubuntu-latest
+    services:
+      postgres:  # throwaway database for the pgvector tests (no real data, test-only credentials)
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: pdtest
+          POSTGRES_DB: pdtest
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d pdtest" --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    env:
+      PD_TEST_DATABASE_URL: postgresql://postgres:pdtest@localhost:5432/pdtest
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10
+      - uses: actions/setup-go@v7  # agent tests build the Go Jenkins MCP server
+        with:
+          go-version-file: services/ingress/go.mod
       - run: uv sync --all-packages --locked
+      # The sandbox tests prove isolation against real Docker; they also fetch one wheel (pytest) from PyPI.
+      - run: docker pull python:3.13-slim
+      # Alert rules and config are checked by Prometheus' own tool, not just by our unit tests.
+      - run: >
+          docker run --rm --entrypoint promtool
+          -v "$PWD/deploy/observability:/obs:ro" prom/prometheus:v3.16.0
+          check rules /obs/alerts.yml
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: make typecheck
       - run: make test
+      # Golden dataset with the scripted model: fails on any safety miss or quality regression.
+      - run: make eval
 
   go:
     runs-on: ubuntu-latest

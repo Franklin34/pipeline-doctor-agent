@@ -1,5 +1,3 @@
 # rag
 
-pgvector ingestion and hybrid search.
-
-_Status: scaffold only (Phase 0)._
+Hybrid retrieval (pgvector + full-text, reciprocal rank fusion) over `knowledge/`. See [docs/rag.md](../docs/rag.md).

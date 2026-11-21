@@ -3,7 +3,11 @@ name = "pd-rag"
 version = "0.0.0"
 description = "pgvector ingestion and hybrid search."
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "pgvector==0.5.1",
+    "psycopg[binary]==3.3.9",
+    "pydantic==2.14.3",
+]
 
 [build-system]
 requires = ["hatchling"]

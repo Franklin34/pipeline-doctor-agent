@@ -14,12 +14,15 @@ from pd_mcp_github.models import (
     BranchCreated,
     CodeOwner,
     CodeOwners,
+    CommitCreated,
     CommitDiff,
     CommitList,
     CommitSummary,
+    FileChange,
     FileContent,
     FileDiff,
     PullRequestOpened,
+    RepoInfo,
 )
 from pd_mcp_github.policy import BRANCH_PREFIX, WritePolicy
 from pd_mcp_github.validation import Ref, Repo, Sha, check_path, clip
@@ -125,6 +128,37 @@ def build_server(backend: GitHubBackend, policy: WritePolicy | None = None) -> M
         policy.check_new_branch(name, backend.default_branch(repo))
         full = backend.create_branch(repo, name, from_sha)
         return BranchCreated(repo=repo, branch=name, from_sha=full)
+
+    @mcp.tool(
+        annotations=READ,
+        description="Get repository facts needed to open a pull request (the default branch).",
+    )
+    def get_repo_info(repo: Repo) -> RepoInfo:
+        return RepoInfo(repo=repo, default_branch=backend.default_branch(repo))
+
+    @mcp.tool(
+        annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False),
+        description=(
+            f"Commit complete new contents of EXISTING files to a '{BRANCH_PREFIX}' branch. "
+            "Refused for the default branch and for protected paths (CI and infrastructure definitions, "
+            "build and test configuration, CODEOWNERS, credentials)."
+        ),
+    )
+    def commit_files(
+        repo: Repo,
+        branch: Annotated[
+            str,
+            Field(max_length=200, description=f"Existing branch, starting with '{BRANCH_PREFIX}'"),
+        ],
+        message: Annotated[str, Field(min_length=3, max_length=500)],
+        files: Annotated[list[FileChange], Field(min_length=1, max_length=10)],
+    ) -> CommitCreated:
+        checked = [(check_path(f.path), len(f.content.encode())) for f in files]
+        policy.check_commit(branch, backend.default_branch(repo), checked, message)
+        sha = backend.commit_files(
+            repo, branch, message.strip(), {f.path: f.content for f in files}
+        )
+        return CommitCreated(repo=repo, branch=branch, sha=sha, files=[f.path for f in files])
 
     @mcp.tool(
         annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False),

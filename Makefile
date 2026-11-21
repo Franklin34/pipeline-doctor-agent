@@ -2,7 +2,7 @@
 GO_MODULES := services/ingress mcp-servers/jenkins
 PY_SRC := agent/src mcp-servers/github/src mcp-servers/jira/src rag/src sandbox/src evals/src
 
-.PHONY: help setup fmt lint typecheck test test-go check up down
+.PHONY: help setup fmt lint typecheck test test-pg test-go eval eval-live check up down ingest
 .DEFAULT_GOAL := help
 
 help: ## Show targets
@@ -24,13 +24,32 @@ lint: ## Lint Python; check Go formatting and vet
 typecheck: ## mypy (strict)
 	uv run mypy $(PY_SRC)
 
-test: ## Python tests
+test: ## Python tests (set PD_SKIP_DOCKER_TESTS=1 to skip the real-Docker ones)
 	uv run pytest
+
+PG_NAME := pd-pgvector-test
+PG_URL := postgresql://postgres:pdtest@127.0.0.1:55432/pdtest
+
+test-pg: ## RAG tests on a throwaway pgvector container (needs Docker; removed afterwards)
+	@docker rm -f $(PG_NAME) >/dev/null 2>&1 || true
+	docker run -d --name $(PG_NAME) -e POSTGRES_PASSWORD=pdtest -e POSTGRES_DB=pdtest -p 127.0.0.1:55432:5432 pgvector/pgvector:pg16 >/dev/null
+	@until docker exec $(PG_NAME) pg_isready -U postgres -d pdtest >/dev/null 2>&1; do sleep 1; done
+	@PD_TEST_DATABASE_URL=$(PG_URL) uv run pytest rag agent/tests/test_knowledge.py; status=$$?; docker rm -f $(PG_NAME) >/dev/null; exit $$status
+
+ingest: ## Index knowledge/ into the database in DATABASE_URL
+	uv run python -m pipeline_doctor_agent.knowledge ingest --dir knowledge
 
 test-go: ## Go tests with the race detector
 	@for m in $(GO_MODULES); do (cd $$m && go test -race ./...) || exit 1; done
 
+eval: ## Golden dataset with the scripted model (free, deterministic); fails on a safety miss or regression
+	uv run python -m pd_evals
+
+eval-live: ## Golden dataset with the REAL model (needs credentials; costs money)
+	uv run python -m pd_evals --live
+
 check: lint typecheck test test-go ## Everything CI runs
+	$(MAKE) eval
 
 COMPOSE := docker compose --env-file .env -f deploy/compose/docker-compose.yml
 

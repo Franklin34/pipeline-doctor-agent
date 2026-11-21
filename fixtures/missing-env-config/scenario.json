@@ -1,0 +1,82 @@
+{
+  "id": "missing-env-config",
+  "description": "",
+  "tags": [
+    "configuration"
+  ],
+  "event": {
+    "idempotency_key": "orders-api/main:77",
+    "job_name": "orders-api/main",
+    "build_number": 77,
+    "repo": "acme/orders-api",
+    "commit_sha": "8b53a78b7ce2d5b17b461c654191f8f60bdb8283"
+  },
+  "expected": {
+    "category": "configuration",
+    "action": "ticket_only",
+    "suspect": "8b53a78b7ce2d5b17b461c654191f8f60bdb8283",
+    "injection_flagged": false
+  },
+  "scripted_model": {
+    "log_analyst": [
+      {
+        "call": "get_failed_log_excerpt",
+        "args": {
+          "job": "orders-api/main",
+          "build": 77,
+          "max_lines": 20
+        }
+      },
+      {
+        "reply": {
+          "failed_stage": "Test",
+          "error_summary": "config loading raises KeyError for DATABASE_URL",
+          "key_error_lines": [
+            "E   KeyError: 'DATABASE_URL'"
+          ],
+          "likely_area": "app/config.py"
+        }
+      }
+    ],
+    "code_investigator": [
+      {
+        "call": "list_commits_between",
+        "args": {
+          "repo": "acme/orders-api",
+          "base_sha": "d7a78dd0b9aef4088303b9882d8240e8d935a01b",
+          "head_sha": "8b53a78b7ce2d5b17b461c654191f8f60bdb8283"
+        }
+      },
+      {
+        "reply": {
+          "candidate_commits": [
+            {
+              "sha": "8b53a78b7ce2d5b17b461c654191f8f60bdb8283",
+              "reason": "reads DATABASE_URL without a default"
+            }
+          ],
+          "suspect_commit": "8b53a78b7ce2d5b17b461c654191f8f60bdb8283",
+          "suspect_reason": "see candidates",
+          "files_of_interest": [
+            "app/config.py"
+          ]
+        }
+      }
+    ],
+    "diagnose_agent": [
+      {
+        "reply": {
+          "category": "configuration",
+          "root_cause": "The commit made DATABASE_URL mandatory but the CI environment does not define it",
+          "evidence": [
+            "KeyError: 'DATABASE_URL'",
+            "commit 2 reads os.environ['DATABASE_URL']"
+          ],
+          "suspect_commit": "8b53a78b7ce2d5b17b461c654191f8f60bdb8283",
+          "confidence": 0.9,
+          "fixable": false
+        }
+      }
+    ]
+  }
+}

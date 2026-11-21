@@ -60,3 +60,18 @@ For the Go server use `-- go run ./mcp-servers/jenkins/cmd/jenkins-mcp` with the
 - When `max_lines` is smaller than the number of error lines, the head+tail truncation can drop useful middle lines. Phase 3 pre-processing selects the key lines deterministically before any LLM sees them.
 - Scrubbing of secrets from logs is done in Phase 3 (before LLM input); the Jenkins server does not scrub yet.
 - Real Jenkins/GitHub/Jira backends: Phase 10.
+
+
+## Real GitHub mode (Phase 10)
+
+`GITHUB_MODE=real` (or `MCP_MODE=real`) switches the GitHub server and the fix flow's repository source from fixtures to GitHub. Jenkins and Jira stay on fixtures until their real backends exist.
+
+| Concern | Rule |
+|---|---|
+| Credentials | One fine-grained token (Contents RW, Pull requests RW, Metadata R) limited to the test repositories. It is passed **only** to the GitHub MCP subprocess, never to Jenkins or Jira, and is excluded from `Settings.__repr__`. |
+| Reach | `GITHUB_ALLOWED_REPOS` is mandatory; any other repository is refused before a request is made. |
+| Writes | Branch names, protected paths and draft-only are enforced by the tool layer *and* the backend. `commit_files` only updates files that already exist. A PR is a draft or it does not exist; there is no fallback. Re-opening a PR for the same branch returns the existing one. |
+| Source for fixes | `GitHubTarballSource` downloads the tarball at the failing commit (no `git`, no hooks, no credentials on disk), forwards no credentials to the redirect host, extracts regular files only, and caps size and count. |
+| Errors | Status classes with short messages; never the token or headers. Reads retry on 502/503/504; writes never retry. |
+
+**Verified:** against a fake of the GitHub REST API built from the documented response shapes, with the same tool-level behaviour as the mock. **Not verified against real GitHub** (permissions, rate limits, plan-specific draft PR support, executable file modes: `commit_files` writes mode 100644).

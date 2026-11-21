@@ -25,7 +25,16 @@ IssueKey = Annotated[
         description="Jira issue key, for example DEMO-12",
     ),
 ]
-Category = Literal["code", "test", "dependency", "infrastructure", "flaky", "configuration"]
+Category = Literal[
+    "code", "test", "dependency", "infrastructure", "flaky", "configuration", "unknown"
+]  # "unknown": automatic diagnosis was unavailable
+IdempotencyKey = Annotated[
+    str,
+    Field(
+        pattern=r"^[A-Za-z0-9:_./ -]{3,200}$",
+        description="Stable id of this occurrence; repeating a call with the same key adds nothing",
+    ),
+]
 MAX_RESULTS = 10
 
 
@@ -50,6 +59,9 @@ class CreatedIssue(BaseModel):
 class CommentAdded(BaseModel):
     key: str
     ok: bool
+    duplicate: bool = Field(
+        description="True when a comment with this idempotency_key already existed"
+    )
 
 
 def _summary(i: Issue) -> IssueSummary:
@@ -118,12 +130,19 @@ def build_server(backend: JiraBackend) -> MCPServer:
 
     @mcp.tool(
         annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False),
-        description="Add a comment to an existing issue (for example a new occurrence of a known failure).",
+        description=(
+            "Add a comment to an existing issue (for example a new occurrence of a known failure). "
+            "Pass idempotency_key so a retried call cannot add the same comment twice."
+        ),
     )
     def add_comment(
-        issue_key: IssueKey, body: Annotated[str, Field(min_length=1, max_length=20000)]
+        issue_key: IssueKey,
+        body: Annotated[str, Field(min_length=1, max_length=19900)],
+        idempotency_key: IdempotencyKey | None = None,
     ) -> CommentAdded:
-        backend.add_comment(issue_key, body)
-        return CommentAdded(key=issue_key, ok=True)
+        marker = f"[pd-occurrence:{idempotency_key}]" if idempotency_key else None
+        text = f"{body}\n\n{marker}" if marker else body
+        added = backend.add_comment(issue_key, text, marker)
+        return CommentAdded(key=issue_key, ok=True, duplicate=not added)
 
     return mcp

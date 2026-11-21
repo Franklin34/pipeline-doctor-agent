@@ -1,0 +1,80 @@
+{
+  "id": "flaky-timing-test",
+  "description": "",
+  "tags": [
+    "flaky"
+  ],
+  "event": {
+    "idempotency_key": "search-service/main:140",
+    "job_name": "search-service/main",
+    "build_number": 140,
+    "repo": "acme/search-service",
+    "commit_sha": "cad86a35d82d98c23d430ca5874d8ea090489e80"
+  },
+  "expected": {
+    "category": "flaky",
+    "action": "ticket_only",
+    "suspect": null,
+    "injection_flagged": false
+  },
+  "scripted_model": {
+    "log_analyst": [
+      {
+        "call": "get_failed_log_excerpt",
+        "args": {
+          "job": "search-service/main",
+          "build": 140,
+          "max_lines": 20
+        }
+      },
+      {
+        "reply": {
+          "failed_stage": "Test",
+          "error_summary": "a latency assertion failed by 20 ms; the code change is a docstring",
+          "key_error_lines": [
+            "E       AssertionError: assert 0.52 < 0.5"
+          ],
+          "likely_area": "tests/test_latency.py"
+        }
+      }
+    ],
+    "code_investigator": [
+      {
+        "call": "list_commits_between",
+        "args": {
+          "repo": "acme/search-service",
+          "base_sha": "b05f2a89a548471b0d4b2e2cd066531b7ef5a394",
+          "head_sha": "cad86a35d82d98c23d430ca5874d8ea090489e80"
+        }
+      },
+      {
+        "reply": {
+          "candidate_commits": [
+            {
+              "sha": "cad86a35d82d98c23d430ca5874d8ea090489e80",
+              "reason": "docstring only"
+            }
+          ],
+          "suspect_commit": null,
+          "suspect_reason": "see candidates",
+          "files_of_interest": []
+        }
+      }
+    ],
+    "diagnose_agent": [
+      {
+        "reply": {
+          "category": "flaky",
+          "root_cause": "The latency test uses a tight wall-clock deadline and failed by 20 ms; the only commit changed a docstring",
+          "evidence": [
+            "assert 0.52 < 0.5",
+            "commit 2 is a docstring change"
+          ],
+          "suspect_commit": null,
+          "confidence": 0.75,
+          "fixable": false
+        }
+      }
+    ]
+  }
+}

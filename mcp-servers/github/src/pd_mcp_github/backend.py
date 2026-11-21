@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -48,6 +49,7 @@ class GitHubBackend(Protocol):
     def file(self, repo: str, path: str, ref: str) -> str: ...
     def codeowners(self, repo: str) -> str: ...
     def create_branch(self, repo: str, name: str, from_sha: str) -> str: ...
+    def commit_files(self, repo: str, branch: str, message: str, files: dict[str, str]) -> str: ...
     def open_pull_request(
         self, repo: str, head: str, base: str, title: str, body: str
     ) -> tuple[int, str]: ...
@@ -60,6 +62,9 @@ class MockBackend:
     repos: dict[str, RawRepo]
     branches: dict[str, dict[str, str]] = field(default_factory=dict)  # repo -> name -> sha
     pull_requests: list[dict[str, object]] = field(default_factory=list)
+    # repo -> branch -> path -> content (what commit_files wrote)
+    branch_files: dict[str, dict[str, dict[str, str]]] = field(default_factory=dict)
+    commits: list[dict[str, object]] = field(default_factory=list)
 
     @classmethod
     def load(cls, fixtures_dir: Path) -> MockBackend:
@@ -134,12 +139,32 @@ class MockBackend:
         existing[name] = full
         return full
 
+    def commit_files(self, repo: str, branch: str, message: str, files: dict[str, str]) -> str:
+        self._repo(repo)
+        if branch not in self.branches.get(repo, {}):
+            raise ToolError(f"branch '{branch}' does not exist; call create_branch first")
+        self.branch_files.setdefault(repo, {}).setdefault(branch, {}).update(files)
+        sha = hashlib.sha1(
+            f"{repo}{branch}{message}{sorted(files.items())}".encode(), usedforsecurity=False
+        ).hexdigest()
+        self.commits.append(
+            {"repo": repo, "branch": branch, "sha": sha, "message": message, "paths": sorted(files)}
+        )
+        return sha
+
     def open_pull_request(
         self, repo: str, head: str, base: str, title: str, body: str
     ) -> tuple[int, str]:
         self._repo(repo)
         if head not in self.branches.get(repo, {}):
             raise ToolError(f"head branch '{head}' does not exist; call create_branch first")
+        if not self.branch_files.get(repo, {}).get(head):
+            raise ToolError(
+                f"branch '{head}' has no changes; call commit_files first (an empty pull request is not allowed)"
+            )
+        for pr in self.pull_requests:  # idempotent: one open PR per head branch
+            if pr["repo"] == repo and pr["head"] == head and pr["base"] == base:
+                return int(str(pr["number"])), f"https://github.example/{repo}/pull/{pr['number']}"
         number = len(self.pull_requests) + 1
         self.pull_requests.append(
             {

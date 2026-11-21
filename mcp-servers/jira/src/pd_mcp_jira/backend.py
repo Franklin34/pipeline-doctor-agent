@@ -29,7 +29,9 @@ class JiraBackend(Protocol):
 
     def search_by_fingerprint(self, fingerprint: str) -> list[Issue]: ...
     def create_issue(self, issue: Issue) -> Issue: ...
-    def add_comment(self, key: str, body: str) -> None: ...
+    def add_comment(self, key: str, body: str, marker: str | None = None) -> bool:
+        """Add a comment; with a marker, do nothing and return False if it is already present."""
+        ...
 
 
 CLOSED = {"done", "closed", "resolved"}
@@ -75,9 +77,13 @@ class MockBackend:
         self.issues[key] = created
         return created
 
-    def add_comment(self, key: str, body: str) -> None:
+    def add_comment(self, key: str, body: str, marker: str | None = None) -> bool:
         if key not in self.issues:
             raise ToolError(
                 f"issue '{key}' not found in project {self.project}; search by fingerprint first"
             )
-        self.issues[key].comments.append(body)
+        issue = self.issues[key]
+        if marker and any(marker in c for c in issue.comments):
+            return False
+        issue.comments.append(body)
+        return True

@@ -1,0 +1,133 @@
+# Prometheus alert rules for Pipeline Doctor. Validate with:  promtool check rules alerts.yml
+# severity: page   = a human should look now (the system is not doing its job)
+#           ticket = look within a working day (something is degraded or suspicious)
+groups:
+  - name: pipeline-doctor-worker
+    rules:
+      - alert: PipelineDoctorDlqNotEmpty
+        expr: pd_dlq_messages > 0
+        for: 5m
+        labels: {severity: page}
+        annotations:
+          summary: "Failures are sitting in the dead-letter queue"
+          description: "{{ $value }} message(s) in the dead-letter stream. A failed pipeline got no diagnosis and no ticket. See docs/runbook.md, 'Dead-letter queue'."
+
+      - alert: PipelineDoctorWorkerStalled
+        expr: time() - pd_worker_last_poll_timestamp_seconds > 120
+        for: 2m
+        labels: {severity: page}
+        annotations:
+          summary: "The worker has stopped polling the queue"
+          description: "No completed queue poll for {{ $value | humanizeDuration }}. The process may be hung (a poll normally completes every few seconds)."
+
+      - alert: PipelineDoctorWorkerDown
+        expr: up{job="pipeline-doctor-worker"} == 0
+        for: 2m
+        labels: {severity: page}
+        annotations:
+          summary: "Prometheus cannot scrape the worker"
+          description: "The worker is down or its /metrics endpoint is unreachable."
+
+      - alert: PipelineDoctorQueueBacklog
+        expr: pd_queue_lag_messages + pd_queue_pending_messages > 20
+        for: 10m
+        labels: {severity: ticket}
+        annotations:
+          summary: "The queue is backing up"
+          description: "{{ $value }} messages are waiting or in flight for 10 minutes. Failures are being diagnosed more slowly than they arrive."
+
+      - alert: PipelineDoctorInvestigationFailures
+        expr: >
+          sum(increase(pd_investigations_total{outcome!="ok"}[30m]))
+            / sum(increase(pd_investigations_total[30m])) > 0.3
+          and sum(increase(pd_investigations_total[30m])) >= 5
+        for: 10m
+        labels: {severity: ticket}
+        annotations:
+          summary: "More than 30% of investigations are failing"
+          description: "Check the model provider, the MCP servers and the 'outcome' breakdown on the dashboard."
+
+      - alert: PipelineDoctorDegradedTickets
+        expr: sum(increase(pd_tickets_total{degraded="true"}[1h])) > 0
+        labels: {severity: ticket}
+        annotations:
+          summary: "Fallback tickets were written because diagnosis was unavailable"
+          description: "{{ $value }} ticket(s) were written without a diagnosis in the last hour."
+
+  - name: pipeline-doctor-cost-and-limits
+    rules:
+      - alert: PipelineDoctorTokenSpike
+        expr: >
+          sum(rate(pd_llm_tokens_total[15m]))
+            > 3 * sum(rate(pd_llm_tokens_total[6h] offset 1h))
+          and sum(increase(pd_llm_tokens_total[15m])) > 100000
+        for: 15m
+        labels: {severity: ticket}
+        annotations:
+          summary: "Token use is three times the recent baseline"
+          description: "A prompt change, a retry loop or a flood of failures. Compare with pd_investigations_total."
+
+      - alert: PipelineDoctorDailyCostHigh
+        expr: sum(increase(pd_llm_cost_usd_total[24h])) > 25
+        labels: {severity: ticket}
+        annotations:
+          summary: "Estimated model spend exceeded 25 USD in 24 hours"
+          description: "Only meaningful when PRICE_IN_PER_MTOK and PRICE_OUT_PER_MTOK are set. Edit the threshold to your budget."
+
+      - alert: PipelineDoctorRunLimitsHit
+        expr: sum(increase(pd_budget_trips_total[1h])) > 3
+        labels: {severity: ticket}
+        annotations:
+          summary: "Runs keep hitting their step, call or token limit"
+          description: "{{ $value }} runs were stopped by a limit in the last hour. The limit may be too low, or an agent is looping."
+
+  - name: pipeline-doctor-safety
+    rules:
+      - alert: PipelineDoctorGuardrailBlocks
+        expr: sum by (agent) (increase(pd_guardrail_blocks_total[15m])) > 0
+        labels: {severity: ticket}
+        annotations:
+          summary: "An agent tried something the policy forbids"
+          description: "Agent {{ $labels.agent }} asked for a tool call that was refused. Possible prompt injection through build output, or a prompt bug. Inspect the audit log lines with status=blocked."
+
+      - alert: PipelineDoctorInjectionFlagged
+        expr: sum by (kind) (increase(pd_injection_flags_total[1h])) > 0
+        labels: {severity: ticket}
+        annotations:
+          summary: "Build output or a commit tried to instruct the model"
+          description: "Input screening flagged '{{ $labels.kind }}' text. The run was held to ticket-only. Check who authored the commit or dependency; this may be an attack on the pipeline."
+
+      - alert: PipelineDoctorFixesFailing
+        expr: >
+          sum(increase(pd_fix_attempts_total{status=~"failed|error"}[6h]))
+            / sum(increase(pd_fix_attempts_total[6h])) > 0.7
+          and sum(increase(pd_fix_attempts_total[6h])) >= 4
+        labels: {severity: ticket}
+        annotations:
+          summary: "Most automatic fix attempts are failing"
+          description: "Check the sandbox (Docker), the fix model's output and the repositories being fixed."
+
+  - name: pipeline-doctor-ingress
+    rules:
+      - alert: IngressDown
+        expr: up{job="ingress"} == 0
+        for: 2m
+        labels: {severity: page}
+        annotations:
+          summary: "The webhook ingress is down"
+          description: "Jenkins failures are not being received."
+
+      - alert: IngressPublishErrors
+        expr: increase(ingress_publish_errors_total[5m]) > 0
+        labels: {severity: page}
+        annotations:
+          summary: "The ingress cannot publish to the queue"
+          description: "Webhooks are being answered with 503 so Jenkins retries; check Redis."
+
+      - alert: IngressServerErrors
+        expr: sum(rate(ingress_webhook_requests_total{code=~"5.."}[5m])) > 0
+        for: 5m
+        labels: {severity: ticket}
+        annotations:
+          summary: "The ingress is returning 5xx"
+          description: "Look at the ingress logs for the cause."

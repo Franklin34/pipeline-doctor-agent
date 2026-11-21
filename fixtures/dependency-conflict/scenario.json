@@ -1,0 +1,82 @@
+{
+  "id": "dependency-conflict",
+  "description": "",
+  "tags": [
+    "dependency"
+  ],
+  "event": {
+    "idempotency_key": "billing-api/main:21",
+    "job_name": "billing-api/main",
+    "build_number": 21,
+    "repo": "acme/billing-api",
+    "commit_sha": "a0cd3cfbf994cec6ccace0c30f067f1e068f4f0a"
+  },
+  "expected": {
+    "category": "dependency",
+    "action": "fix",
+    "suspect": "a0cd3cfbf994cec6ccace0c30f067f1e068f4f0a",
+    "injection_flagged": false
+  },
+  "scripted_model": {
+    "log_analyst": [
+      {
+        "call": "get_failed_log_excerpt",
+        "args": {
+          "job": "billing-api/main",
+          "build": 21,
+          "max_lines": 20
+        }
+      },
+      {
+        "reply": {
+          "failed_stage": "Install",
+          "error_summary": "pip cannot resolve requests==2.31.0 with urllib3==2.2.0",
+          "key_error_lines": [
+            "ERROR: ResolutionImpossible"
+          ],
+          "likely_area": "requirements.txt"
+        }
+      }
+    ],
+    "code_investigator": [
+      {
+        "call": "list_commits_between",
+        "args": {
+          "repo": "acme/billing-api",
+          "base_sha": "f5e100812c12131b7db2764ff5a2d266341dae3b",
+          "head_sha": "a0cd3cfbf994cec6ccace0c30f067f1e068f4f0a"
+        }
+      },
+      {
+        "reply": {
+          "candidate_commits": [
+            {
+              "sha": "a0cd3cfbf994cec6ccace0c30f067f1e068f4f0a",
+              "reason": "pins urllib3 to an incompatible version"
+            }
+          ],
+          "suspect_commit": "a0cd3cfbf994cec6ccace0c30f067f1e068f4f0a",
+          "suspect_reason": "see candidates",
+          "files_of_interest": [
+            "requirements.txt"
+          ]
+        }
+      }
+    ],
+    "diagnose_agent": [
+      {
+        "reply": {
+          "category": "dependency",
+          "root_cause": "urllib3 was pinned to 2.2.0, which conflicts with the version required by requests 2.31.0",
+          "evidence": [
+            "ResolutionImpossible during pip install",
+            "commit 2 changed the urllib3 pin"
+          ],
+          "suspect_commit": "a0cd3cfbf994cec6ccace0c30f067f1e068f4f0a",
+          "confidence": 0.9,
+          "fixable": true
+        }
+      }
+    ]
+  }
+}

@@ -11,6 +11,19 @@ services:
       timeout: 3s
       retries: 10
 
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: pipeline_doctor
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: ["pg-data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pipeline_doctor"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   ingress:
     build: ../../services/ingress
     environment:
@@ -25,5 +38,36 @@ services:
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
 
+  # --- observability (optional): docker compose --profile observability up -d ---------------------
+  prometheus:
+    image: prom/prometheus:v3.16.0
+    profiles: ["observability"]
+    volumes:
+      - ../observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../observability/alerts.yml:/etc/prometheus/alerts.yml:ro
+    ports: ["127.0.0.1:9090:9090"]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+
+  grafana:
+    image: grafana/grafana:13.3.1
+    profiles: ["observability"]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - ../observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["127.0.0.1:3000:3000"]
+    depends_on: [prometheus]
+
+  jaeger:
+    image: jaegertracing/jaeger:2.23.0
+    profiles: ["observability"]
+    ports:
+      - "127.0.0.1:16686:16686"  # UI
+      - "127.0.0.1:4317:4317"    # OTLP gRPC (the worker and the ingress send traces here)
+
 volumes:
   redis-data:
+  pg-data:

@@ -1,0 +1,34 @@
+{
+  "repo": "acme/auth-service",
+  "default_branch": "main",
+  "commits": [
+    {
+      "sha": "165723b34b1d859630e115c2a5bdf54885270207",
+      "author": "dev1",
+      "date": "2026-11-10T09:00:00Z",
+      "message": "Add token module",
+      "files": []
+    },
+    {
+      "sha": "37409cbe6b1996125d13e4c768f096432aeacf50",
+      "author": "dev1",
+      "date": "2026-11-11T09:00:00Z",
+      "message": "Change token TTL to 10s",
+      "files": [
+        {
+          "path": "auth/token.py",
+          "status": "modified",
+          "patch": "@@ -1 +1 @@\n-TTL = 3600\n+TTL = 10"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "auth/token.py",
+      "ref": "37409cbe6b1996125d13e4c768f096432aeacf50",
+      "content": "TTL = 10\n"
+    }
+  ],
+  "codeowners": "* @acme/team\n"
+}

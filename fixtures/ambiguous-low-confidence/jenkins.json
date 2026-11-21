@@ -1,0 +1,50 @@
+{
+  "job": "inventory/main",
+  "builds": [
+    {
+      "number": 89,
+      "result": "SUCCESS",
+      "commit_sha": "45e7efcffc36f9faad76af3b121a9b4bd3172bb8",
+      "duration_s": 90,
+      "url": "https://jenkins.example/job/inventory/main/89/",
+      "failed_stage": null
+    },
+    {
+      "number": 90,
+      "result": "FAILURE",
+      "commit_sha": "0f197bfaf1ec3315cbf09ec6f5770fa2e41d57d5",
+      "duration_s": 55,
+      "url": "https://jenkins.example/job/inventory/main/90/",
+      "failed_stage": "Test"
+    }
+  ],
+  "logs": {
+    "90": [
+      "Started by user dev1",
+      "[Pipeline] Start of Pipeline",
+      "[Pipeline] { (Test)",
+      "+ pytest -q",
+      "E       assert 7 == 8",
+      "FAILED tests/test_stock.py::test_reserve - AssertionError",
+      "1 failed, 30 passed in 2.00s",
+      "ERROR: script returned exit code 1",
+      "[Pipeline] }",
+      "[Pipeline] // stage",
+      "[Pipeline] End of Pipeline",
+      "Finished: FAILURE"
+    ]
+  },
+  "test_reports": {
+    "90": {
+      "passed": 5,
+      "failed": [
+        {
+          "class_name": "tests.test_stock",
+          "name": "test_reserve",
+          "message": "assert 7 == 8"
+        }
+      ],
+      "skipped": 0
+    }
+  }
+}

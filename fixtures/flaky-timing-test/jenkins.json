@@ -1,0 +1,51 @@
+{
+  "job": "search-service/main",
+  "builds": [
+    {
+      "number": 139,
+      "result": "SUCCESS",
+      "commit_sha": "b05f2a89a548471b0d4b2e2cd066531b7ef5a394",
+      "duration_s": 90,
+      "url": "https://jenkins.example/job/search-service/main/139/",
+      "failed_stage": null
+    },
+    {
+      "number": 140,
+      "result": "FAILURE",
+      "commit_sha": "cad86a35d82d98c23d430ca5874d8ea090489e80",
+      "duration_s": 55,
+      "url": "https://jenkins.example/job/search-service/main/140/",
+      "failed_stage": "Test"
+    }
+  ],
+  "logs": {
+    "140": [
+      "Started by user dev1",
+      "[Pipeline] Start of Pipeline",
+      "[Pipeline] { (Test)",
+      "+ pytest -q",
+      "E       AssertionError: assert 0.52 < 0.5",
+      "E       (took longer than the 0.5s deadline)",
+      "FAILED tests/test_latency.py::test_query_is_fast - AssertionError",
+      "1 failed, 40 passed in 9.10s",
+      "ERROR: script returned exit code 1",
+      "[Pipeline] }",
+      "[Pipeline] // stage",
+      "[Pipeline] End of Pipeline",
+      "Finished: FAILURE"
+    ]
+  },
+  "test_reports": {
+    "140": {
+      "passed": 5,
+      "failed": [
+        {
+          "class_name": "tests.test_latency",
+          "name": "test_query_is_fast",
+          "message": "AssertionError: assert 0.52 < 0.5"
+        }
+      ],
+      "skipped": 0
+    }
+  }
+}

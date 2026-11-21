@@ -4,6 +4,7 @@
 
 ```python
 from pipeline_doctor_agent.preprocess import preprocess
+
 result = preprocess(log_lines, junit_xml=None, failed_stage="Test")
 ```
 

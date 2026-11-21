@@ -5,7 +5,17 @@ description = "ADK agents, deterministic preprocessing, policy gate and queue wo
 requires-python = ">=3.13"
 dependencies = [
     "defusedxml==0.7.1",
+    "google-adk==2.15.0",
+    "httpx==0.28.1",
+    "opentelemetry-api==1.45.2",
+    "opentelemetry-exporter-otlp-proto-grpc==1.45.2",
+    "opentelemetry-sdk==1.45.2",
+    "pd-mcp-github",
+    "pd-rag",
+    "pd-sandbox",
+    "prometheus-client==0.26.0",
     "pydantic==2.14.3",
+    "redis==8.1.0",
 ]
 
 [build-system]
@@ -14,3 +24,8 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pipeline_doctor_agent"]
+
+[tool.uv.sources]
+pd-rag = { workspace = true }
+pd-sandbox = { workspace = true }
+pd-mcp-github = { workspace = true }

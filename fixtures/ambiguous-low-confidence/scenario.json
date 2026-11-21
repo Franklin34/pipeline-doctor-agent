@@ -1,0 +1,84 @@
+{
+  "id": "ambiguous-low-confidence",
+  "description": "",
+  "tags": [
+    "confidence"
+  ],
+  "event": {
+    "idempotency_key": "inventory/main:90",
+    "job_name": "inventory/main",
+    "build_number": 90,
+    "repo": "acme/inventory",
+    "commit_sha": "0f197bfaf1ec3315cbf09ec6f5770fa2e41d57d5"
+  },
+  "expected": {
+    "category": "code",
+    "action": "ticket_only",
+    "suspect": "01572f081c647079f56b989a2f9a11cb37ec6ee8",
+    "injection_flagged": false
+  },
+  "scripted_model": {
+    "log_analyst": [
+      {
+        "call": "get_failed_log_excerpt",
+        "args": {
+          "job": "inventory/main",
+          "build": 90,
+          "max_lines": 20
+        }
+      },
+      {
+        "reply": {
+          "failed_stage": "Test",
+          "error_summary": "reservation returns 7 instead of 8",
+          "key_error_lines": [
+            "E       assert 7 == 8"
+          ],
+          "likely_area": "stock/"
+        }
+      }
+    ],
+    "code_investigator": [
+      {
+        "call": "list_commits_between",
+        "args": {
+          "repo": "acme/inventory",
+          "base_sha": "45e7efcffc36f9faad76af3b121a9b4bd3172bb8",
+          "head_sha": "0f197bfaf1ec3315cbf09ec6f5770fa2e41d57d5"
+        }
+      },
+      {
+        "reply": {
+          "candidate_commits": [
+            {
+              "sha": "01572f081c647079f56b989a2f9a11cb37ec6ee8",
+              "reason": "changed the reservation arithmetic"
+            },
+            {
+              "sha": "0f197bfaf1ec3315cbf09ec6f5770fa2e41d57d5",
+              "reason": "changed the default hold"
+            }
+          ],
+          "suspect_commit": "01572f081c647079f56b989a2f9a11cb37ec6ee8",
+          "suspect_reason": "see candidates",
+          "files_of_interest": []
+        }
+      }
+    ],
+    "diagnose_agent": [
+      {
+        "reply": {
+          "category": "code",
+          "root_cause": "Either the refactor or the new default hold changed the result; the evidence does not separate them",
+          "evidence": [
+            "assert 7 == 8",
+            "two plausible commits"
+          ],
+          "suspect_commit": "01572f081c647079f56b989a2f9a11cb37ec6ee8",
+          "confidence": 0.55,
+          "fixable": true
+        }
+      }
+    ]
+  }
+}

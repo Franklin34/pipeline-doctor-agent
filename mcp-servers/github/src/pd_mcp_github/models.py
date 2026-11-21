@@ -50,6 +50,23 @@ class CodeOwners(BaseModel):
     entries: list[CodeOwner] = Field(description="In file order; the LAST matching pattern wins")
 
 
+class RepoInfo(BaseModel):
+    repo: str
+    default_branch: str
+
+
+class FileChange(BaseModel):
+    path: str = Field(max_length=300, description="Repository-relative path of an EXISTING file")
+    content: str = Field(max_length=100_000, description="The complete new content of the file")
+
+
+class CommitCreated(BaseModel):
+    repo: str
+    branch: str
+    sha: str
+    files: list[str]
+
+
 class BranchCreated(BaseModel):
     repo: str
     branch: str

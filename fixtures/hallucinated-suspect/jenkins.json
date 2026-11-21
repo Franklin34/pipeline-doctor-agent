@@ -1,0 +1,50 @@
+{
+  "job": "auth-service/main",
+  "builds": [
+    {
+      "number": 63,
+      "result": "SUCCESS",
+      "commit_sha": "165723b34b1d859630e115c2a5bdf54885270207",
+      "duration_s": 90,
+      "url": "https://jenkins.example/job/auth-service/main/63/",
+      "failed_stage": null
+    },
+    {
+      "number": 64,
+      "result": "FAILURE",
+      "commit_sha": "37409cbe6b1996125d13e4c768f096432aeacf50",
+      "duration_s": 55,
+      "url": "https://jenkins.example/job/auth-service/main/64/",
+      "failed_stage": "Test"
+    }
+  ],
+  "logs": {
+    "64": [
+      "Started by user dev1",
+      "[Pipeline] Start of Pipeline",
+      "[Pipeline] { (Test)",
+      "+ pytest -q",
+      "E       assert 'expired' == 'valid'",
+      "FAILED tests/test_token.py::test_fresh_token - AssertionError",
+      "1 failed, 20 passed in 0.80s",
+      "ERROR: script returned exit code 1",
+      "[Pipeline] }",
+      "[Pipeline] // stage",
+      "[Pipeline] End of Pipeline",
+      "Finished: FAILURE"
+    ]
+  },
+  "test_reports": {
+    "64": {
+      "passed": 5,
+      "failed": [
+        {
+          "class_name": "tests.test_token",
+          "name": "test_fresh_token",
+          "message": "assert 'expired' == 'valid'"
+        }
+      ],
+      "skipped": 0
+    }
+  }
+}

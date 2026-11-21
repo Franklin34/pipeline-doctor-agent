@@ -1,0 +1,51 @@
+{
+  "job": "orders-api/main",
+  "builds": [
+    {
+      "number": 76,
+      "result": "SUCCESS",
+      "commit_sha": "d7a78dd0b9aef4088303b9882d8240e8d935a01b",
+      "duration_s": 90,
+      "url": "https://jenkins.example/job/orders-api/main/76/",
+      "failed_stage": null
+    },
+    {
+      "number": 77,
+      "result": "FAILURE",
+      "commit_sha": "8b53a78b7ce2d5b17b461c654191f8f60bdb8283",
+      "duration_s": 55,
+      "url": "https://jenkins.example/job/orders-api/main/77/",
+      "failed_stage": "Test"
+    }
+  ],
+  "logs": {
+    "77": [
+      "Started by user dev1",
+      "[Pipeline] Start of Pipeline",
+      "[Pipeline] { (Test)",
+      "+ pytest -q",
+      "E   KeyError: 'DATABASE_URL'",
+      "E   File \"app/config.py\", line 6, in load",
+      "FAILED tests/test_config.py::test_load_config - KeyError: 'DATABASE_URL'",
+      "1 failed, 12 passed in 0.40s",
+      "ERROR: script returned exit code 1",
+      "[Pipeline] }",
+      "[Pipeline] // stage",
+      "[Pipeline] End of Pipeline",
+      "Finished: FAILURE"
+    ]
+  },
+  "test_reports": {
+    "77": {
+      "passed": 5,
+      "failed": [
+        {
+          "class_name": "tests.test_config",
+          "name": "test_load_config",
+          "message": "KeyError: 'DATABASE_URL'"
+        }
+      ],
+      "skipped": 0
+    }
+  }
+}

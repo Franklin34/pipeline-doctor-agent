@@ -1,0 +1,47 @@
+{
+  "repo": "acme/inventory",
+  "default_branch": "main",
+  "commits": [
+    {
+      "sha": "45e7efcffc36f9faad76af3b121a9b4bd3172bb8",
+      "author": "dev8",
+      "date": "2026-11-10T09:00:00Z",
+      "message": "Add stock model",
+      "files": []
+    },
+    {
+      "sha": "01572f081c647079f56b989a2f9a11cb37ec6ee8",
+      "author": "dev8",
+      "date": "2026-11-11T09:00:00Z",
+      "message": "Refactor reservation",
+      "files": [
+        {
+          "path": "stock/reserve.py",
+          "status": "modified",
+          "patch": "@@ -2,2 +2,2 @@\n-    return qty - 1\n+    return qty - held"
+        }
+      ]
+    },
+    {
+      "sha": "0f197bfaf1ec3315cbf09ec6f5770fa2e41d57d5",
+      "author": "dev9",
+      "date": "2026-11-12T09:00:00Z",
+      "message": "Change default hold",
+      "files": [
+        {
+          "path": "stock/config.py",
+          "status": "modified",
+          "patch": "@@ -1 +1 @@\n-HOLD = 1\n+HOLD = 2"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "stock/reserve.py",
+      "ref": "0f197bfaf1ec3315cbf09ec6f5770fa2e41d57d5",
+      "content": "def reserve(qty, held):\n    return qty - held\n"
+    }
+  ],
+  "codeowners": "* @acme/team\n"
+}

@@ -35,7 +35,9 @@ async def test_lists_expected_tools(backend: MockBackend) -> None:
         "get_commit_diff",
         "get_file",
         "get_codeowners",
+        "get_repo_info",
         "create_branch",
+        "commit_files",
         "open_draft_pull_request",
     }
     assert (

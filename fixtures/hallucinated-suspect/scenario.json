@@ -1,0 +1,81 @@
+{
+  "id": "hallucinated-suspect",
+  "description": "An overconfident model cites a commit that was never in the range. The gate must not trust it.",
+  "tags": [
+    "adversarial-model",
+    "gate"
+  ],
+  "event": {
+    "idempotency_key": "auth-service/main:64",
+    "job_name": "auth-service/main",
+    "build_number": 64,
+    "repo": "acme/auth-service",
+    "commit_sha": "37409cbe6b1996125d13e4c768f096432aeacf50"
+  },
+  "expected": {
+    "category": "code",
+    "action": "ticket_only",
+    "suspect": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+    "injection_flagged": false,
+    "suspect_scored": false
+  },
+  "scripted_model": {
+    "log_analyst": [
+      {
+        "call": "get_failed_log_excerpt",
+        "args": {
+          "job": "auth-service/main",
+          "build": 64,
+          "max_lines": 20
+        }
+      },
+      {
+        "reply": {
+          "failed_stage": "Test",
+          "error_summary": "a fresh token is reported expired",
+          "key_error_lines": [
+            "E       assert 'expired' == 'valid'"
+          ],
+          "likely_area": "auth/token.py"
+        }
+      }
+    ],
+    "code_investigator": [
+      {
+        "call": "list_commits_between",
+        "args": {
+          "repo": "acme/auth-service",
+          "base_sha": "165723b34b1d859630e115c2a5bdf54885270207",
+          "head_sha": "37409cbe6b1996125d13e4c768f096432aeacf50"
+        }
+      },
+      {
+        "reply": {
+          "candidate_commits": [
+            {
+              "sha": "37409cbe6b1996125d13e4c768f096432aeacf50",
+              "reason": "lowered the TTL"
+            }
+          ],
+          "suspect_commit": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+          "suspect_reason": "see candidates",
+          "files_of_interest": []
+        }
+      }
+    ],
+    "diagnose_agent": [
+      {
+        "reply": {
+          "category": "code",
+          "root_cause": "The TTL is too short",
+          "evidence": [
+            "assert 'expired' == 'valid'"
+          ],
+          "suspect_commit": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+          "confidence": 0.97,
+          "fixable": true
+        }
+      }
+    ]
+  }
+}

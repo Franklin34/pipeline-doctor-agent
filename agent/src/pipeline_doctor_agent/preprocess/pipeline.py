@@ -24,6 +24,7 @@ def preprocess(
     log: str | list[str],
     junit_xml: str | None = None,
     failed_stage: str | None = None,
+    test_report: TestReport | None = None,
 ) -> ProcessedFailure:
     """Scrub first, then extract. Nothing downstream ever sees unscrubbed text."""
     redactions: Counter[str] = Counter()

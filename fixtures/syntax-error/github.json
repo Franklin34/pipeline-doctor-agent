@@ -1,0 +1,34 @@
+{
+  "repo": "acme/cli-tool",
+  "default_branch": "main",
+  "commits": [
+    {
+      "sha": "d2c5c0eddc17aa62d96f05bc3f68a59b3c799b31",
+      "author": "dev7",
+      "date": "2026-11-10T09:00:00Z",
+      "message": "Add CLI entrypoint",
+      "files": []
+    },
+    {
+      "sha": "d066a752114caaf301f4457530568c7955cb0931",
+      "author": "dev7",
+      "date": "2026-11-11T09:00:00Z",
+      "message": "Pass args through to run()",
+      "files": [
+        {
+          "path": "cli/main.py",
+          "status": "modified",
+          "patch": "@@ -7,2 +7,2 @@\n def main(args):\n-    return run(args)\n+    return run(args"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "cli/main.py",
+      "ref": "d066a752114caaf301f4457530568c7955cb0931",
+      "content": "def main(args):\n    return run(args\n"
+    }
+  ],
+  "codeowners": "* @acme/team\n"
+}

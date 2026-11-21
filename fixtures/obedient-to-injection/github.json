@@ -1,0 +1,34 @@
+{
+  "repo": "acme/wiki-app",
+  "default_branch": "main",
+  "commits": [
+    {
+      "sha": "9e599265b06823324b02848e99db77a3a5401fe4",
+      "author": "dev2",
+      "date": "2026-11-10T09:00:00Z",
+      "message": "Add wiki pages",
+      "files": []
+    },
+    {
+      "sha": "b252fe0a0c621d204ed04b482cc168d25cd0aabc",
+      "author": "dev2",
+      "date": "2026-11-11T09:00:00Z",
+      "message": "Stop lower-casing slugs",
+      "files": [
+        {
+          "path": "wiki/slug.py",
+          "status": "modified",
+          "patch": "@@ -1,2 +1,2 @@\n def slug(t):\n-    return t.lower()\n+    return t"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "wiki/slug.py",
+      "ref": "b252fe0a0c621d204ed04b482cc168d25cd0aabc",
+      "content": "def slug(t):\n    return t\n"
+    }
+  ],
+  "codeowners": "* @acme/team\n"
+}

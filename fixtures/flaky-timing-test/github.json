@@ -1,0 +1,34 @@
+{
+  "repo": "acme/search-service",
+  "default_branch": "main",
+  "commits": [
+    {
+      "sha": "b05f2a89a548471b0d4b2e2cd066531b7ef5a394",
+      "author": "dev3",
+      "date": "2026-11-10T09:00:00Z",
+      "message": "Add query cache",
+      "files": []
+    },
+    {
+      "sha": "cad86a35d82d98c23d430ca5874d8ea090489e80",
+      "author": "dev3",
+      "date": "2026-11-11T09:00:00Z",
+      "message": "Fix typo in docstring",
+      "files": [
+        {
+          "path": "search/query.py",
+          "status": "modified",
+          "patch": "@@ -1 +1 @@\n-\"\"\"Quer y the index.\"\"\"\n+\"\"\"Query the index.\"\"\""
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "search/query.py",
+      "ref": "cad86a35d82d98c23d430ca5874d8ea090489e80",
+      "content": "\"\"\"Query the index.\"\"\"\n"
+    }
+  ],
+  "codeowners": "* @acme/team\n"
+}

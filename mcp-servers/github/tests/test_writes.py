@@ -65,9 +65,31 @@ async def test_create_branch_ok_and_no_duplicates(backend: MockBackend) -> None:
     assert err and "already exists" in text
 
 
-async def test_pull_request_is_draft_targets_default_and_has_footer(backend: MockBackend) -> None:
-    head = "pipeline-doctor/fix-pricing-12"
+async def make_branch_with_commit(
+    backend: MockBackend, head: str = "pipeline-doctor/fix-pricing-12"
+) -> str:
     await call(backend, "create_branch", {"repo": REPO, "name": head, "from_sha": C})
+    err, text, _ = await call(
+        backend,
+        "commit_files",
+        {
+            "repo": REPO,
+            "branch": head,
+            "message": "Fix discount",
+            "files": [
+                {
+                    "path": "app/pricing.py",
+                    "content": "def apply_discount(p, r):\n    return p * (1 - r)\n",
+                }
+            ],
+        },
+    )
+    assert not err, text
+    return head
+
+
+async def test_pull_request_is_draft_targets_default_and_has_footer(backend: MockBackend) -> None:
+    head = await make_branch_with_commit(backend)
     err, _, data = await call(
         backend,
         "open_draft_pull_request",
@@ -118,6 +140,149 @@ async def test_pull_request_requires_existing_branch(backend: MockBackend) -> No
         },
     )
     assert err and "create_branch" in text
+
+
+async def test_pull_request_without_any_commit_is_refused(backend: MockBackend) -> None:
+    head = "pipeline-doctor/empty"
+    await call(backend, "create_branch", {"repo": REPO, "name": head, "from_sha": C})
+    err, text, _ = await call(
+        backend,
+        "open_draft_pull_request",
+        {"repo": REPO, "head": head, "base": "main", "title": "Nothing", "body": "b"},
+    )
+    assert err and "no changes" in text and backend.pull_requests == []
+
+
+async def test_opening_the_same_pull_request_twice_returns_the_existing_one(
+    backend: MockBackend,
+) -> None:
+    head = await make_branch_with_commit(backend)
+    args = {"repo": REPO, "head": head, "base": "main", "title": "Fix discount", "body": "b"}
+    _, _, first = await call(backend, "open_draft_pull_request", args)
+    _, _, second = await call(backend, "open_draft_pull_request", args)
+    assert first["url"] == second["url"] and len(backend.pull_requests) == 1
+
+
+async def test_get_repo_info(backend: MockBackend) -> None:
+    err, _, data = await call(backend, "get_repo_info", {"repo": REPO})
+    assert not err and data == {"repo": REPO, "default_branch": "main"}
+
+
+async def test_commit_files_records_content_on_the_agent_branch_only(backend: MockBackend) -> None:
+    head = await make_branch_with_commit(backend)
+    assert backend.branch_files[REPO][head]["app/pricing.py"].endswith("(1 - r)\n")
+    assert backend.commits[0]["paths"] == ["app/pricing.py"] and len(backend.commits) == 1
+
+
+@pytest.mark.parametrize(
+    ("branch", "needle"),
+    [
+        ("main", "default branch"),
+        ("feature/x", "must start with"),
+        ("pipeline-doctor/ghost", "create_branch"),
+        ("pipeline-doctor/../main", "invalid"),
+    ],
+)
+async def test_commit_files_refuses_other_branches(
+    backend: MockBackend, branch: str, needle: str
+) -> None:
+    await call(
+        backend, "create_branch", {"repo": REPO, "name": "pipeline-doctor/real", "from_sha": C}
+    )
+    err, text, _ = await call(
+        backend,
+        "commit_files",
+        {
+            "repo": REPO,
+            "branch": branch,
+            "message": "x y z",
+            "files": [{"path": "app/a.py", "content": "x"}],
+        },
+    )
+    assert err and needle in text, text
+    assert backend.commits == []
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        ".github/workflows/ci.yml",
+        ".GitHub/workflows/ci.yml",
+        "Jenkinsfile",
+        "ci/Jenkinsfile.prod",
+        "Dockerfile",
+        "svc/Dockerfile.dev",
+        "deploy/compose/docker-compose.yml",
+        "infra/main.tf",
+        "x/main.tf",
+        ".env",
+        ".env.production",
+        "CODEOWNERS",
+        "docs/CODEOWNERS",
+        "pyproject.toml",
+        "setup.py",
+        "tox.ini",
+        "pytest.ini",
+        "tests/conftest.py",
+        "conftest.py",
+        "Makefile",
+        "uv.lock",
+        "secrets/server.pem",
+        "id_rsa",
+        ".pre-commit-config.yaml",
+    ],
+)
+async def test_commit_files_refuses_protected_paths(backend: MockBackend, path: str) -> None:
+    await call(backend, "create_branch", {"repo": REPO, "name": "pipeline-doctor/p", "from_sha": C})
+    err, text, _ = await call(
+        backend,
+        "commit_files",
+        {
+            "repo": REPO,
+            "branch": "pipeline-doctor/p",
+            "message": "sneaky change",
+            "files": [{"path": path, "content": "x"}],
+        },
+    )
+    assert err and "protected path" in text, (path, text)
+    assert backend.commits == []
+
+
+@pytest.mark.parametrize(
+    "files",
+    [
+        [{"path": "../etc/passwd", "content": "x"}],
+        [{"path": "/etc/passwd", "content": "x"}],
+        [{"path": "a.py", "content": "x"}, {"path": "a.py", "content": "y"}],  # duplicate
+        [{"path": "a.py", "content": "x" * 100_001}],
+        [{"path": f"f{i}.py", "content": "x"} for i in range(11)],
+        [],
+    ],
+)
+async def test_commit_files_input_validation(
+    backend: MockBackend, files: list[dict[str, str]]
+) -> None:
+    await call(backend, "create_branch", {"repo": REPO, "name": "pipeline-doctor/v", "from_sha": C})
+    err, _, _ = await call(
+        backend,
+        "commit_files",
+        {"repo": REPO, "branch": "pipeline-doctor/v", "message": "msg msg", "files": files},
+    )
+    assert err and backend.commits == []
+
+
+def test_protected_path_matcher() -> None:
+    from pd_mcp_github.policy import is_protected
+
+    assert (
+        is_protected(".github/CODEOWNERS")
+        and is_protected("a/b/Dockerfile")
+        and not is_protected("app/pricing.py")
+    )
+    assert not is_protected("tests/test_pricing.py") and not is_protected("requirements.txt")
+    assert not is_protected(
+        "src/github_client.py"
+    )  # 'github' in a name is not the .github directory
 
 
 def test_policy_unit() -> None:

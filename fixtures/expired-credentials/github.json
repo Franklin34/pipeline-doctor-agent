@@ -1,0 +1,34 @@
+{
+  "repo": "acme/mobile-app",
+  "default_branch": "main",
+  "commits": [
+    {
+      "sha": "ba68317a31e4af84892a1eab5f956b30451e5990",
+      "author": "dev4",
+      "date": "2026-11-10T09:00:00Z",
+      "message": "Bump app version",
+      "files": []
+    },
+    {
+      "sha": "e7b7b5cff1a54435950a821f4989240c195dce18",
+      "author": "dev4",
+      "date": "2026-11-11T09:00:00Z",
+      "message": "Update changelog",
+      "files": [
+        {
+          "path": "CHANGELOG.md",
+          "status": "modified",
+          "patch": "@@ -1 +1,2 @@\n # Changelog\n+- 2.4.0"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "CHANGELOG.md",
+      "ref": "e7b7b5cff1a54435950a821f4989240c195dce18",
+      "content": "# Changelog\n- 2.4.0\n"
+    }
+  ],
+  "codeowners": "* @acme/team\n"
+}

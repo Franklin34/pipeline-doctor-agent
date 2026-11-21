@@ -1,0 +1,34 @@
+{
+  "repo": "acme/orders-api",
+  "default_branch": "main",
+  "commits": [
+    {
+      "sha": "d7a78dd0b9aef4088303b9882d8240e8d935a01b",
+      "author": "dev5",
+      "date": "2026-11-10T09:00:00Z",
+      "message": "Add health endpoint",
+      "files": []
+    },
+    {
+      "sha": "8b53a78b7ce2d5b17b461c654191f8f60bdb8283",
+      "author": "dev5",
+      "date": "2026-11-11T09:00:00Z",
+      "message": "Read DATABASE_URL from the environment",
+      "files": [
+        {
+          "path": "app/config.py",
+          "status": "modified",
+          "patch": "@@ -4,3 +4,3 @@\n def load():\n-    return {\"db\": \"sqlite://\"}\n+    return {\"db\": os.environ[\"DATABASE_URL\"]}"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "app/config.py",
+      "ref": "8b53a78b7ce2d5b17b461c654191f8f60bdb8283",
+      "content": "import os\n\n\ndef load():\n    return {\"db\": os.environ[\"DATABASE_URL\"]}\n"
+    }
+  ],
+  "codeowners": "* @acme/team\n"
+}

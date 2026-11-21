@@ -1,0 +1,34 @@
+{
+  "repo": "acme/reports-service",
+  "default_branch": "main",
+  "commits": [
+    {
+      "sha": "cb45219935176fb2d9cb982d0b0fe12af4c85b10",
+      "author": "dev6",
+      "date": "2026-11-10T09:00:00Z",
+      "message": "Add report model",
+      "files": []
+    },
+    {
+      "sha": "43b46a04fd00b3a50a8e3241126b40d94c41c39d",
+      "author": "dev6",
+      "date": "2026-11-11T09:00:00Z",
+      "message": "Use colon in total line",
+      "files": [
+        {
+          "path": "reports/format.py",
+          "status": "modified",
+          "patch": "@@ -1,2 +1,2 @@\n def format_total(n):\n-    return f\"Total = {n}\"\n+    return f\"Total: {n}\""
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "reports/format.py",
+      "ref": "43b46a04fd00b3a50a8e3241126b40d94c41c39d",
+      "content": "def format_total(n):\n    return f\"Total: {n}\"\n"
+    }
+  ],
+  "codeowners": "* @acme/team\n"
+}

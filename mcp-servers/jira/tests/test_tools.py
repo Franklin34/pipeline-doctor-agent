@@ -139,6 +139,38 @@ async def test_add_comment(backend: MockBackend) -> None:
     assert backend.issues["DEMO-7"].comments == ["Seen again in build 31."]
 
 
+async def test_add_comment_is_idempotent_with_a_key(backend: MockBackend) -> None:
+    args = {
+        "issue_key": "DEMO-7",
+        "body": "Seen again in build 31.",
+        "idempotency_key": "payments-api/main:31",
+    }
+    err, _, first = await call(backend, "add_comment", args)
+    err2, _, second = await call(backend, "add_comment", args)
+    assert not err and not err2
+    assert first["duplicate"] is False and second["duplicate"] is True
+    assert len(backend.issues["DEMO-7"].comments) == 1
+    assert "[pd-occurrence:payments-api/main:31]" in backend.issues["DEMO-7"].comments[0]
+    _, _, other = await call(
+        backend, "add_comment", {**args, "idempotency_key": "payments-api/main:32"}
+    )
+    assert other["duplicate"] is False and len(backend.issues["DEMO-7"].comments) == 2
+
+
+async def test_unknown_category_is_accepted_for_fallback_tickets(backend: MockBackend) -> None:
+    err, _, _ = await call(
+        backend,
+        "create_issue",
+        {
+            "summary": "Automatic diagnosis unavailable",
+            "description": "d",
+            "fingerprint": "abcdef0123456789",
+            "category": "unknown",
+        },
+    )
+    assert not err
+
+
 @pytest.mark.parametrize(
     ("args", "needle"),
     [

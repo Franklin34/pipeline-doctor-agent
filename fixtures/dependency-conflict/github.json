@@ -1,0 +1,34 @@
+{
+  "repo": "acme/billing-api",
+  "default_branch": "main",
+  "commits": [
+    {
+      "sha": "f5e100812c12131b7db2764ff5a2d266341dae3b",
+      "author": "dev2",
+      "date": "2026-11-10T09:00:00Z",
+      "message": "Initial billing endpoints",
+      "files": []
+    },
+    {
+      "sha": "a0cd3cfbf994cec6ccace0c30f067f1e068f4f0a",
+      "author": "dev2",
+      "date": "2026-11-11T09:00:00Z",
+      "message": "Pin urllib3 for security advisory",
+      "files": [
+        {
+          "path": "requirements.txt",
+          "status": "modified",
+          "patch": "@@ -1,2 +1,2 @@\n requests==2.31.0\n-urllib3==1.26.18\n+urllib3==2.2.0"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "requirements.txt",
+      "ref": "a0cd3cfbf994cec6ccace0c30f067f1e068f4f0a",
+      "content": "requests==2.31.0\nurllib3==2.2.0\n"
+    }
+  ],
+  "codeowners": "* @acme/team\n"
+}

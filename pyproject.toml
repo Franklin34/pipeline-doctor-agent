@@ -7,11 +7,14 @@ dependencies = []
 
 [dependency-groups]
 dev = [
+  "fakeredis==2.40.0",
   "mypy==2.4.1",
   "pytest==9.2.0",
   "pytest-asyncio==1.5.0",
+  "pyyaml==6.0.4",
   "ruff==0.17.5",
   "types-defusedxml==0.7.0.20260504",
+  "types-pyyaml==6.0.12.20261113",
 ]
 
 [tool.uv]
@@ -46,7 +49,9 @@ select = ["E", "F", "I", "B", "UP", "S", "SIM", "RUF"]
 ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
-"**/tests/**" = ["S101"]  # asserts are fine in tests
+"**/tests/**" = ["S101", "S603", "S607"]  # asserts, and calling the docker CLI, are fine in tests
+# The table name is a class constant and every value is a bound parameter (see PgStore).
+"rag/src/pd_rag/store.py" = ["S608"]
 
 [tool.mypy]
 python_version = "3.13"
@@ -59,3 +64,8 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["agent/tests", "mcp-servers/github/tests", "mcp-servers/jira/tests", "rag/tests", "sandbox/tests", "evals/tests"]
 addopts = "--import-mode=importlib"
+# ADK 2.x deprecates these two classes in favour of Workflow; we use them on purpose (docs/adr/0002).
+filterwarnings = [
+  "ignore:ParallelAgent is deprecated:DeprecationWarning",
+  "ignore:SequentialAgent is deprecated:DeprecationWarning",
+]

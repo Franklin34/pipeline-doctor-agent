@@ -1,0 +1,43 @@
+{
+  "job": "mobile-app/main",
+  "builds": [
+    {
+      "number": 57,
+      "result": "SUCCESS",
+      "commit_sha": "ba68317a31e4af84892a1eab5f956b30451e5990",
+      "duration_s": 90,
+      "url": "https://jenkins.example/job/mobile-app/main/57/",
+      "failed_stage": null
+    },
+    {
+      "number": 58,
+      "result": "FAILURE",
+      "commit_sha": "e7b7b5cff1a54435950a821f4989240c195dce18",
+      "duration_s": 55,
+      "url": "https://jenkins.example/job/mobile-app/main/58/",
+      "failed_stage": "Publish"
+    }
+  ],
+  "logs": {
+    "58": [
+      "Started by user dev1",
+      "[Pipeline] Start of Pipeline",
+      "[Pipeline] { (Publish)",
+      "+ docker login registry.example -u ci",
+      "Error response from daemon: Get https://registry.example/v2/: unauthorized: token ghp_Zx9Qm2LpV7sT4wYb8NcR1dKf6HgJ3uAeXo5I is expired",
+      "E   authentication required",
+      "ERROR: script returned exit code 1",
+      "[Pipeline] }",
+      "[Pipeline] // stage",
+      "[Pipeline] End of Pipeline",
+      "Finished: FAILURE"
+    ]
+  },
+  "test_reports": {
+    "58": {
+      "passed": 5,
+      "failed": [],
+      "skipped": 0
+    }
+  }
+}

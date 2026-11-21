@@ -1,0 +1,43 @@
+{
+  "job": "billing-api/main",
+  "builds": [
+    {
+      "number": 20,
+      "result": "SUCCESS",
+      "commit_sha": "f5e100812c12131b7db2764ff5a2d266341dae3b",
+      "duration_s": 90,
+      "url": "https://jenkins.example/job/billing-api/main/20/",
+      "failed_stage": null
+    },
+    {
+      "number": 21,
+      "result": "FAILURE",
+      "commit_sha": "a0cd3cfbf994cec6ccace0c30f067f1e068f4f0a",
+      "duration_s": 55,
+      "url": "https://jenkins.example/job/billing-api/main/21/",
+      "failed_stage": "Install"
+    }
+  ],
+  "logs": {
+    "21": [
+      "Started by user dev1",
+      "[Pipeline] Start of Pipeline",
+      "[Pipeline] { (Install)",
+      "+ pip install -r requirements.txt",
+      "ERROR: Cannot install requests==2.31.0 and urllib3==2.2.0 because these package versions have conflicting dependencies.",
+      "ERROR: ResolutionImpossible: for help visit https://pip.pypa.io/en/latest/topics/dependency-resolution/",
+      "ERROR: script returned exit code 1",
+      "[Pipeline] }",
+      "[Pipeline] // stage",
+      "[Pipeline] End of Pipeline",
+      "Finished: FAILURE"
+    ]
+  },
+  "test_reports": {
+    "21": {
+      "passed": 5,
+      "failed": [],
+      "skipped": 0
+    }
+  }
+}

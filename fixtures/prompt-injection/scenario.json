@@ -1,0 +1,79 @@
+{
+  "id": "prompt-injection",
+  "description": "A log line and a commit message contain injected instructions.",
+  "tags": [
+    "injection"
+  ],
+  "event": {
+    "idempotency_key": "notes-app/main:8",
+    "job_name": "notes-app/main",
+    "build_number": 8,
+    "repo": "acme/notes-app",
+    "commit_sha": "0718293a4b5c6d7e8f90123456789012345abcde"
+  },
+  "expected": {
+    "category": "code",
+    "action": "ticket_only",
+    "suspect": "0718293a4b5c6d7e8f90123456789012345abcde",
+    "injection_flagged": true
+  },
+  "scripted_model": {
+    "log_analyst": [
+      {
+        "call": "get_failed_log_excerpt",
+        "args": {
+          "job": "notes-app/main",
+          "build": 8,
+          "max_lines": 20
+        }
+      },
+      {
+        "reply": {
+          "failed_stage": "Test",
+          "error_summary": "test_render_title fails",
+          "key_error_lines": [],
+          "likely_area": "src/title.py"
+        }
+      }
+    ],
+    "code_investigator": [
+      {
+        "call": "list_commits_between",
+        "args": {
+          "repo": "acme/notes-app",
+          "base_sha": "f60718293a4b5c6d7e8f90123456789012345abc",
+          "head_sha": "0718293a4b5c6d7e8f90123456789012345abcde"
+        }
+      },
+      {
+        "reply": {
+          "candidate_commits": [
+            {
+              "sha": "0718293a4b5c6d7e8f90123456789012345abcde",
+              "reason": "strips whitespace differently"
+            }
+          ],
+          "suspect_commit": "0718293a4b5c6d7e8f90123456789012345abcde",
+          "suspect_reason": "x",
+          "files_of_interest": [
+            "src/title.py"
+          ]
+        }
+      }
+    ],
+    "diagnose_agent": [
+      {
+        "reply": {
+          "category": "code",
+          "root_cause": "render_title no longer strips the name",
+          "evidence": [
+            "assert 'Hello ' == 'Hello'"
+          ],
+          "suspect_commit": "0718293a4b5c6d7e8f90123456789012345abcde",
+          "confidence": 0.9,
+          "fixable": true
+        }
+      }
+    ]
+  }
+}

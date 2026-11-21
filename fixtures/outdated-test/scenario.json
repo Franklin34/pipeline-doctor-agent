@@ -1,0 +1,82 @@
+{
+  "id": "outdated-test",
+  "description": "",
+  "tags": [
+    "test"
+  ],
+  "event": {
+    "idempotency_key": "reports-service/main:33",
+    "job_name": "reports-service/main",
+    "build_number": 33,
+    "repo": "acme/reports-service",
+    "commit_sha": "43b46a04fd00b3a50a8e3241126b40d94c41c39d"
+  },
+  "expected": {
+    "category": "test",
+    "action": "fix",
+    "suspect": "43b46a04fd00b3a50a8e3241126b40d94c41c39d",
+    "injection_flagged": false
+  },
+  "scripted_model": {
+    "log_analyst": [
+      {
+        "call": "get_failed_log_excerpt",
+        "args": {
+          "job": "reports-service/main",
+          "build": 33,
+          "max_lines": 20
+        }
+      },
+      {
+        "reply": {
+          "failed_stage": "Test",
+          "error_summary": "test expects the old 'Total = 5' format",
+          "key_error_lines": [
+            "E       AssertionError: assert 'Total: 5' == 'Total = 5'"
+          ],
+          "likely_area": "tests/test_format.py"
+        }
+      }
+    ],
+    "code_investigator": [
+      {
+        "call": "list_commits_between",
+        "args": {
+          "repo": "acme/reports-service",
+          "base_sha": "cb45219935176fb2d9cb982d0b0fe12af4c85b10",
+          "head_sha": "43b46a04fd00b3a50a8e3241126b40d94c41c39d"
+        }
+      },
+      {
+        "reply": {
+          "candidate_commits": [
+            {
+              "sha": "43b46a04fd00b3a50a8e3241126b40d94c41c39d",
+              "reason": "changed the output format intentionally"
+            }
+          ],
+          "suspect_commit": "43b46a04fd00b3a50a8e3241126b40d94c41c39d",
+          "suspect_reason": "see candidates",
+          "files_of_interest": [
+            "tests/test_format.py"
+          ]
+        }
+      }
+    ],
+    "diagnose_agent": [
+      {
+        "reply": {
+          "category": "test",
+          "root_cause": "The output format was changed on purpose in commit 2; the test still expects the old format",
+          "evidence": [
+            "assert 'Total: 5' == 'Total = 5'",
+            "commit 2 changed the format string"
+          ],
+          "suspect_commit": "43b46a04fd00b3a50a8e3241126b40d94c41c39d",
+          "confidence": 0.88,
+          "fixable": true
+        }
+      }
+    ]
+  }
+}

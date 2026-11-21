@@ -1,0 +1,50 @@
+{
+  "job": "reports-service/main",
+  "builds": [
+    {
+      "number": 32,
+      "result": "SUCCESS",
+      "commit_sha": "cb45219935176fb2d9cb982d0b0fe12af4c85b10",
+      "duration_s": 90,
+      "url": "https://jenkins.example/job/reports-service/main/32/",
+      "failed_stage": null
+    },
+    {
+      "number": 33,
+      "result": "FAILURE",
+      "commit_sha": "43b46a04fd00b3a50a8e3241126b40d94c41c39d",
+      "duration_s": 55,
+      "url": "https://jenkins.example/job/reports-service/main/33/",
+      "failed_stage": "Test"
+    }
+  ],
+  "logs": {
+    "33": [
+      "Started by user dev1",
+      "[Pipeline] Start of Pipeline",
+      "[Pipeline] { (Test)",
+      "+ pytest -q",
+      "E       AssertionError: assert 'Total: 5' == 'Total = 5'",
+      "FAILED tests/test_format.py::test_format_total - AssertionError",
+      "1 failed, 8 passed in 0.30s",
+      "ERROR: script returned exit code 1",
+      "[Pipeline] }",
+      "[Pipeline] // stage",
+      "[Pipeline] End of Pipeline",
+      "Finished: FAILURE"
+    ]
+  },
+  "test_reports": {
+    "33": {
+      "passed": 5,
+      "failed": [
+        {
+          "class_name": "tests.test_format",
+          "name": "test_format_total",
+          "message": "AssertionError: assert 'Total: 5' == 'Total = 5'"
+        }
+      ],
+      "skipped": 0
+    }
+  }
+}

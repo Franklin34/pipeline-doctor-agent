@@ -1,0 +1,80 @@
+{
+  "id": "infra-missing-service",
+  "description": "Postgres is unreachable after a README-only commit.",
+  "tags": [
+    "infrastructure"
+  ],
+  "event": {
+    "idempotency_key": "payments-api/main:30",
+    "job_name": "payments-api/main",
+    "build_number": 30,
+    "repo": "acme/payments-api",
+    "commit_sha": "d4e5f60718293a4b5c6d7e8f9012345678901234"
+  },
+  "expected": {
+    "category": "infrastructure",
+    "action": "ticket_only",
+    "suspect": null,
+    "injection_flagged": false
+  },
+  "scripted_model": {
+    "log_analyst": [
+      {
+        "call": "get_failed_log_excerpt",
+        "args": {
+          "job": "payments-api/main",
+          "build": 30,
+          "max_lines": 20
+        }
+      },
+      {
+        "reply": {
+          "failed_stage": "Integration Test",
+          "error_summary": "integration tests cannot connect to postgres: connection refused",
+          "key_error_lines": [
+            "E   psycopg2.OperationalError: ... Connection refused"
+          ],
+          "likely_area": "database service in the pipeline network"
+        }
+      }
+    ],
+    "code_investigator": [
+      {
+        "call": "list_commits_between",
+        "args": {
+          "repo": "acme/payments-api",
+          "base_sha": "e5f60718293a4b5c6d7e8f90123456789012345a",
+          "head_sha": "d4e5f60718293a4b5c6d7e8f9012345678901234"
+        }
+      },
+      {
+        "reply": {
+          "candidate_commits": [
+            {
+              "sha": "d4e5f60718293a4b5c6d7e8f9012345678901234",
+              "reason": "README badge change only"
+            }
+          ],
+          "suspect_commit": null,
+          "suspect_reason": "the only commit touches documentation",
+          "files_of_interest": []
+        }
+      }
+    ],
+    "diagnose_agent": [
+      {
+        "reply": {
+          "category": "infrastructure",
+          "root_cause": "The postgres service is unreachable from the Integration Test stage (connection refused); the only commit changed the README",
+          "evidence": [
+            "psycopg2.OperationalError: connection refused on port 5432",
+            "commit d4e5f60 only edits README.md"
+          ],
+          "suspect_commit": null,
+          "confidence": 0.9,
+          "fixable": false
+        }
+      }
+    ]
+  }
+}

@@ -3,7 +3,10 @@ name = "pd-sandbox"
 version = "0.0.0"
 description = "Ephemeral Docker sandbox runner."
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "defusedxml==0.7.1",
+    "pydantic==2.14.3",
+]
 
 [build-system]
 requires = ["hatchling"]

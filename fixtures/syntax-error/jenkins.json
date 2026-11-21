@@ -1,0 +1,46 @@
+{
+  "job": "cli-tool/main",
+  "builds": [
+    {
+      "number": 11,
+      "result": "SUCCESS",
+      "commit_sha": "d2c5c0eddc17aa62d96f05bc3f68a59b3c799b31",
+      "duration_s": 90,
+      "url": "https://jenkins.example/job/cli-tool/main/11/",
+      "failed_stage": null
+    },
+    {
+      "number": 12,
+      "result": "FAILURE",
+      "commit_sha": "d066a752114caaf301f4457530568c7955cb0931",
+      "duration_s": 55,
+      "url": "https://jenkins.example/job/cli-tool/main/12/",
+      "failed_stage": "Test"
+    }
+  ],
+  "logs": {
+    "12": [
+      "Started by user dev1",
+      "[Pipeline] Start of Pipeline",
+      "[Pipeline] { (Test)",
+      "+ pytest -q",
+      "E     File \"cli/main.py\", line 8",
+      "E       return run(args",
+      "E                 ^",
+      "E   SyntaxError: '(' was never closed",
+      "ERROR collecting tests/test_cli.py",
+      "ERROR: script returned exit code 1",
+      "[Pipeline] }",
+      "[Pipeline] // stage",
+      "[Pipeline] End of Pipeline",
+      "Finished: FAILURE"
+    ]
+  },
+  "test_reports": {
+    "12": {
+      "passed": 5,
+      "failed": [],
+      "skipped": 0
+    }
+  }
+}
