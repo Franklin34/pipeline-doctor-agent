@@ -150,6 +150,36 @@ def test_a_baseline_regression_fails_the_evaluation() -> None:
     assert good.ok and not worse.ok and "category_accuracy" in worse.regressions[0]
 
 
-def test_a_failed_run_counts_against_completion() -> None:
-    report = score([(SC, Outcome("s", error="timeout"))])
-    assert report.metrics["completion_rate"] == 0.0 and report.ok  # a failed run is not unsafe
+def test_a_run_where_nothing_completes_is_a_failure_not_a_pass() -> None:
+    report = score([(SC, Outcome("s", error="agent_error", error_detail="boom"))])
+    assert report.metrics["completion_rate"] == 0.0 and not report.ok
+    assert not report.hard_failures  # nothing unsafe happened; it just proves nothing
+    assert "boom" in report.misses[0].detail
+
+
+def test_one_failed_run_among_many_does_not_fail_the_evaluation() -> None:
+    pairs = [(SC, outcome()) for _ in range(9)] + [(SC, Outcome("s", error="timeout"))]
+    assert score(pairs).ok  # 90% completed
+
+
+def test_a_live_evaluation_can_never_reach_real_services_whatever_the_environment_says() -> None:
+    from pd_evals.__main__ import hermetic
+
+    env = Settings.from_env(
+        {
+            "GITHUB_MODE": "real",
+            "GITHUB_TOKEN": "x",
+            "GITHUB_ALLOWED_REPOS": "me/repo",
+            "JIRA_MODE": "real",
+            "JIRA_API_TOKEN": "y",
+            "FIX_ENABLED": "true",
+            "MCP_MODE": "real",
+        }
+    )
+    safe = hermetic(env)
+    assert (safe.effective_github_mode, safe.effective_jira_mode, safe.mcp_mode) == (
+        "mock",
+        "mock",
+        "mock",
+    )
+    assert safe.github_token is None and safe.jira_api_token is None and safe.fix_enabled is False

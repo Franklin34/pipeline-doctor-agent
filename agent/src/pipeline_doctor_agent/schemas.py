@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from datetime import datetime
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -14,10 +14,31 @@ Sha = Annotated[str, Field(pattern=SHA_PATTERN)]
 ShortText = Annotated[str, Field(max_length=500)]
 
 
+def _drop_additional_properties(node: Any) -> Any:
+    if isinstance(node, dict):
+        return {
+            k: _drop_additional_properties(v)
+            for k, v in node.items()
+            if k != "additionalProperties"
+        }
+    if isinstance(node, list):
+        return [_drop_additional_properties(v) for v in node]
+    return node
+
+
 class Strict(BaseModel):
     """Unknown fields are errors: a model that invents fields is a model that drifted."""
 
     model_config = ConfigDict(extra="forbid")
+
+    @classmethod
+    def model_json_schema(cls, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        """The schema sent to the model omits ``additionalProperties``: the Gemini API rejects it in a
+        response schema. Our own validation is unaffected and stays strict (``extra="forbid"``)."""
+        schema: dict[str, Any] = _drop_additional_properties(
+            super().model_json_schema(*args, **kwargs)
+        )
+        return schema
 
 
 class Category(StrEnum):

@@ -2,7 +2,7 @@
 GO_MODULES := services/ingress mcp-servers/jenkins
 PY_SRC := agent/src mcp-servers/github/src mcp-servers/jira/src rag/src sandbox/src evals/src
 
-.PHONY: help setup fmt lint typecheck test test-pg test-go eval eval-live demo tf-validate check up down ingest
+.PHONY: help setup fmt lint typecheck test test-pg test-go eval eval-live demo demo-live tf-validate check up down ingest
 .DEFAULT_GOAL := help
 
 help: ## Show targets
@@ -50,6 +50,9 @@ eval-live: ## Golden dataset with the REAL model (needs credentials; costs money
 
 demo: ## Narrated offline run of the real pipeline (scripted model; no keys, no network)
 	uv run python -m pd_evals.demo
+
+demo-live: ## Narrated run with the REAL model (needs GOOGLE_API_KEY in the environment; costs money)
+	uv run python -m pd_evals.demo --live
 
 tf-validate: ## terraform fmt + validate (no cloud access, no state)
 	cd deploy/terraform && terraform fmt -check -recursive && terraform init -backend=false -input=false >/dev/null && terraform validate

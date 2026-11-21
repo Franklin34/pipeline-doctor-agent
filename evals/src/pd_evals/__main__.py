@@ -25,9 +25,24 @@ ROOT = Path(__file__).resolve().parents[3]
 BASELINE = ROOT / "evals" / "baseline.json"
 
 
+def hermetic(s: Settings) -> Settings:
+    """An evaluation runs on fixtures only. Whatever the environment says (real GitHub or Jira, a
+    token, automatic fixes), the eval must never reach a real service or write anything."""
+    return replace(
+        s,
+        mcp_mode="mock",
+        github_mode="mock",
+        jira_mode="mock",
+        github_token=None,
+        jira_api_token=None,
+        fix_enabled=False,
+        queue_backend="redis",
+    )
+
+
 async def amain(args: argparse.Namespace) -> int:
     scenarios = load_scenarios(ROOT / "fixtures", set(args.scenario) or None)
-    base = Settings.from_env() if args.live else Settings()
+    base = hermetic(Settings.from_env() if args.live else Settings())
     settings = replace(
         base,
         fixtures_dir=str(ROOT / "fixtures"),

@@ -97,3 +97,44 @@ def test_knowledge_settings() -> None:
     assert Settings.from_env({}).database_url is None
     with pytest.raises(ValueError):
         Settings.from_env({"EMBEDDER": "magic"})
+
+
+def test_gemini_names_get_a_client_that_retries_transient_errors() -> None:
+    from google.adk.models.google_llm import Gemini
+    from pipeline_doctor_agent.fake_llm import ScriptedLlm
+    from pipeline_doctor_agent.models import resolve_model
+
+    m = resolve_model("gemini-3.8-flash")
+    assert isinstance(m, Gemini) and m.model == "gemini-3.8-flash"
+    assert m.retry_options is not None and m.retry_options.attempts == 4
+    assert {429, 503} <= set(m.retry_options.http_status_codes or [])
+    fake = ScriptedLlm(scripts={})
+    assert resolve_model(fake) is fake  # a ready instance (tests) is used as is
+
+
+def test_the_schema_sent_to_the_model_has_no_additional_properties_but_validation_stays_strict() -> (
+    None
+):
+    import json
+
+    import pytest
+    from pipeline_doctor_agent.schemas import CodeFindings, Diagnosis
+    from pydantic import ValidationError
+
+    for model in (Diagnosis, CodeFindings):
+        assert "additionalProperties" not in json.dumps(
+            model.model_json_schema()
+        )  # incl. nested models
+    good = {
+        "category": "code",
+        "root_cause": "x" * 10,
+        "evidence": ["evidence line"],
+        "suspect_commit": None,
+        "confidence": 0.5,
+        "fixable": False,
+    }
+    Diagnosis.model_validate(good)
+    with pytest.raises(ValidationError):
+        Diagnosis.model_validate(
+            {**good, "invented_field": 1}
+        )  # a drifting model is still rejected

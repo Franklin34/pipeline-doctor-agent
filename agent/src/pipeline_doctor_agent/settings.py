@@ -23,8 +23,10 @@ def _int(env: Mapping[str, str], key: str, default: int) -> int:
 
 @dataclass(frozen=True)
 class Settings:
-    small_model: str = "gemini-2.5-flash"
-    large_model: str = "gemini-2.5-pro"
+    # Model names go stale quickly (gemini-2.5-* is already retired for new keys). These are the ones a
+    # real run was verified with; check `models.list()` for what your key can use, and set both in .env.
+    small_model: str = "gemini-3.5-flash"
+    large_model: str = "gemini-3.5-flash"
     fix_threshold: float = 0.8
     max_llm_calls: int = 30
     run_timeout_s: float = 300.0

@@ -28,6 +28,7 @@ from pipeline_doctor_agent.schemas import PipelineFailedEvent
 from pipeline_doctor_agent.settings import Settings
 from pipeline_doctor_agent.ticket import TicketService
 
+from pd_evals.__main__ import hermetic
 from pd_evals.runner import build_jenkins_mcp
 from pd_evals.scenario import Scenario, load_scenarios
 
@@ -41,13 +42,16 @@ def say(title: str, *lines: str) -> None:
         print(textwrap.indent(line, "  "))
 
 
-async def narrate(sc: Scenario, settings: Settings) -> None:
+async def narrate(sc: Scenario, settings: Settings, *, live: bool = False) -> None:
     print("\n" + "=" * 78)
     print(f"\033[1;36mScenario: {sc.id}\033[0m  {sc.description}")
     print("=" * 78)
     jira, github = JiraMock.load(ROOT / "fixtures"), GitHubMock.load(ROOT / "fixtures")
-    llm = ScriptedLlm(scripts=copy.deepcopy(sc.scripted_model))
-    investigator = Investigator(settings, small_model=llm, large_model=llm)
+    if live:  # the real model named by SMALL_MODEL / LARGE_MODEL
+        investigator = Investigator(settings)
+    else:
+        llm = ScriptedLlm(scripts=copy.deepcopy(sc.scripted_model))
+        investigator = Investigator(settings, small_model=llm, large_model=llm)
     tickets = TicketService(
         settings,
         jira=lambda: Client(jira_server(jira)),
@@ -114,18 +118,21 @@ async def narrate(sc: Scenario, settings: Settings) -> None:
 async def amain(args: argparse.Namespace) -> None:
     scenarios = load_scenarios(ROOT / "fixtures", set(args.scenario or DEFAULT))
     settings = replace(
-        Settings(),
+        hermetic(Settings.from_env() if args.live else Settings()),
         fixtures_dir=str(ROOT / "fixtures"),
         jenkins_mcp_command=os.environ.get("JENKINS_MCP_COMMAND") or build_jenkins_mcp(ROOT),
         run_timeout_s=120,
     )
     for sc in scenarios:
-        await narrate(sc, settings)
+        await narrate(sc, settings, live=args.live)
 
 
 def main() -> None:
     p = argparse.ArgumentParser(prog="pd_evals.demo", description=__doc__)
     p.add_argument("scenario", nargs="*", help=f"scenario ids (default: {', '.join(DEFAULT)})")
+    p.add_argument(
+        "--live", action="store_true", help="use the real model (needs GOOGLE_API_KEY; costs money)"
+    )
     asyncio.run(amain(p.parse_args()))
     sys.exit(0)
 

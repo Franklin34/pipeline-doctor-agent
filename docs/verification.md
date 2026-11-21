@@ -30,7 +30,7 @@ What has actually been run, against what, and what has not. Written so a reader 
 
 | Item | Why it matters |
 |---|---|
-| **A real language model** (Gemini) | Diagnosis quality is **unmeasured**. The evals prove the system around the model, including a model that is wrong, overconfident or obeys an injection; they say nothing about how good a real model is. Run `make eval-live` (costs money, needs a key) to measure it |
+| **A real language model** (Gemini) | **One scenario** (`logic-bug`) has been run live on `gemini-3.5-flash`: correct category, suspect and gate decision (17 steps, ~50k tokens; the policy layer refused 2 tool calls the model attempted, which were not inspected). The other 11 were **not run**: the free-tier key allows 20 requests per day per model. Diagnosis quality is therefore **essentially unmeasured**. The evals prove the system around the model, including a model that is wrong, overconfident or obeys an injection; they say nothing about how good a real model is. Run `make eval-live` on a key with billing enabled to measure it. The live run also found two bugs no scripted test could: stale default model names, and a response schema Gemini rejects (`additionalProperties`) |
 | **Real Jira** | The backend and the ADF conversion are tested against a fake built from documented shapes; required custom fields, workflows and real permissions are unknown |
 | **Real Jenkins** | There is no backend. Everything about builds comes from fixtures |
 | **Google Cloud** | The Terraform has never run `plan` or `apply`; the first apply will probably surface issues. Fixes cannot run there (no Docker) |

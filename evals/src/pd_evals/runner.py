@@ -22,6 +22,7 @@ from pd_evals.scenario import Scenario
 class Outcome:
     scenario: str
     error: str | None = None  # InvestigationError kind, if the run failed
+    error_detail: str = ""  # short, for the report (the message of an InvestigationError)
     category: str | None = None
     action: str | None = None
     suspect: str | None = None
@@ -61,6 +62,7 @@ async def run_scenario(scenario: Scenario, settings: Settings, *, live: bool) ->
         result = await investigator.investigate(PipelineFailedEvent(**scenario.event))
     except InvestigationError as exc:
         out.error = exc.kind
+        out.error_detail = str(exc)[:400].replace("\n", " ")
         seen = _everything_the_model_saw(llm)
     else:
         out.category = str(result.diagnosis.category)

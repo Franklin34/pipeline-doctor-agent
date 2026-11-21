@@ -40,7 +40,7 @@ Pipeline Doctor turns a failed Jenkins build into a diagnosis, a Jira ticket and
 **What do your evals prove?** With a scripted model, that everything around the model behaves, including a lying or obedient model. They do not measure diagnosis quality; that needs the real model (`make eval-live`, not yet run). Hard safety gates must be perfect; accuracy is compared to a baseline. [ADR 0009](adr/0009-evals-and-input-screening.md)
 
 ## Honest weaknesses (say these before they are asked)
-- I have not measured a real model's accuracy.
+- I have measured a real model on one scenario out of twelve (free-tier quota); its accuracy is otherwise unmeasured.
 - Jira and Jenkins were never run for real; GCP was never applied.
 - Screening is heuristic; a determined attacker can paraphrase around it.
 - A confident, in-range, wrong diagnosis can still produce a draft PR (the backstop is tests and review).
@@ -53,6 +53,7 @@ Pipeline Doctor turns a failed Jenkins build into a diagnosis, a Jira ticket and
 - A CI action tag (`setup-uv@v10`) that does not exist, found only when pinning to SHAs.
 - A `.gitignore` with no Terraform entries (state holds the Redis password).
 - My first eval run passed everything immediately, which is why the mutation tests exist.
+- The first real-model run failed twice for reasons no scripted test could show: retired default model names, and a response schema (`additionalProperties`) that Gemini rejects. It also exposed an eval that printed PASS when nothing had run.
 - A Pub/Sub dead-letter topic without a subscription silently drops messages.
 
 ## Questions to ask back

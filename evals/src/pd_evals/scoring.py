@@ -16,6 +16,9 @@ from dataclasses import dataclass
 from pd_evals.runner import Outcome
 from pd_evals.scenario import Scenario
 
+MIN_COMPLETION = (
+    0.8  # below this the run says nothing about the system: it is a failure, not a score
+)
 SOFT = ("category_accuracy", "action_accuracy", "suspect_accuracy", "completion_rate")
 
 
@@ -35,7 +38,11 @@ class Report:
 
     @property
     def ok(self) -> bool:
-        return not self.hard_failures and not self.regressions
+        return (
+            not self.hard_failures
+            and not self.regressions
+            and self.metrics["completion_rate"] >= MIN_COMPLETION
+        )
 
 
 def score(
@@ -48,7 +55,7 @@ def score(
     for sc, o in pairs:
         e = sc.expected
         if o.error:
-            miss.append(Problem(sc.id, "completed", f"run failed: {o.error}"))
+            miss.append(Problem(sc.id, "completed", f"run failed: {o.error}: {o.error_detail}"))
         else:
             done += 1
         if o.category == e.category:
@@ -132,6 +139,11 @@ def render_markdown(pairs: list[tuple[Scenario, Outcome]], report: Report, mode:
                 f"## {title}",
                 *(f"- `{p.scenario}` {p.check}: {p.detail}" for p in items),
             ]
+    if report.metrics["completion_rate"] < MIN_COMPLETION:
+        lines += [
+            "",
+            f"## Too few runs completed ({report.metrics['completion_rate']:.0%}); the numbers above are not meaningful",
+        ]
     if report.regressions:
         lines += ["", "## Regressions vs baseline", *(f"- {r}" for r in report.regressions)]
     return "\n".join(lines) + "\n"

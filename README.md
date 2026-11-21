@@ -59,7 +59,7 @@ This table is the honest part. Full detail in [docs/verification.md](docs/verifi
 | **GitHub (real)** | Verified on one private repository: reads, a branch, a commit and a **draft PR**, plus live refusals |
 | **Pub/Sub** | Verified against the real emulator (delivery, retry, dead-letter, lease extension) |
 | Docker sandbox | Verified against real Docker (network, filesystem, memory, process and timeout limits) |
-| **Gemini (real model)** | **Not run.** Diagnosis quality is unmeasured; the evals use a scripted model. `make eval-live` exists |
+| **Gemini (real model)** | **One scenario run live** (correct). The other 11 are unmeasured: the key was free-tier (20 requests per day per model). `make eval-live` and `make demo-live` exist |
 | **Jira (real)** | Backend written and tested against a fake; **never run against a real Jira** |
 | **Jenkins (real)** | **No real backend**; fixtures only |
 | **GCP deployment** | Terraform validates and is policy-tested; **never planned or applied** |

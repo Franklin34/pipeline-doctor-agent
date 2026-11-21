@@ -9,6 +9,8 @@ real investigator (real MCP servers, real policy, screening, gate and scrubbing)
 | scripted (default) | `make eval` | scripted answers stored in each scenario | everything *around* the model behaves: tools, permissions, screening, gate, scrubbing | free, deterministic, runs in CI |
 | live | `make eval-live` | the real model from your settings | how good the model's *diagnoses* are | needs credentials, costs money, never run automatically |
 
+`make demo-live` is the same narrated run as `make demo` with the real model. Both live commands need `GOOGLE_API_KEY` in the environment (`set -a; source .env; set +a`). A free-tier key allows only about 20 requests per day per model; one scenario uses roughly 9, so the full dataset needs a key with billing enabled.
+
 A scripted pass says nothing about diagnosis quality, only that the system handles a model that
 answers like this one. Treat `eval-live` as the quality measurement and `eval` as a regression
 test for the safety machinery. (`eval-live` has not been run: it needs your approval and credentials.)
